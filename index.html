@@ -212,11 +212,32 @@ dialog h2 { margin: 0; font: 700 26px/1.1 var(--font-display); color: var(--text
 .matview-title { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--color-accent); }
 .matlinks { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
 .mat {
-  display: flex; align-items: center; gap: 10px; padding: 9px 12px 9px 9px; min-width: 0;
+  display: grid; gap: 10px; padding: 10px; min-width: 0; align-content: start;
   background: var(--bg-base); border: 1px solid var(--border-default); border-radius: var(--radius-md);
-  color: var(--text-primary); text-decoration: none; transition: var(--transition-base);
+  color: var(--text-primary); transition: var(--transition-base);
 }
-.mat:hover { border-color: var(--color-accent); box-shadow: var(--glow-primary); }
+.mat:hover { border-color: var(--color-secondary); }
+.mat-head { display: flex; align-items: center; gap: 10px; min-width: 0; }
+
+/* abrir / copiar link */
+.lk { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-width: 0; }
+.lk-open, .lk-copy {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 5px 10px; border-radius: var(--radius-sm);
+  font: 12px/1.2 var(--font-body); cursor: pointer; transition: var(--transition-base); max-width: 100%;
+}
+.lk-open {
+  background: rgba(193,67,188,.14); border: 1px solid var(--color-accent); color: var(--text-primary); text-decoration: none;
+}
+.lk-open span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lk-open svg { color: var(--color-accent); flex: none; }
+.lk-open:hover { background: var(--color-accent); color: var(--bg-base); }
+.lk-open:hover svg { color: var(--bg-base); }
+.lk-copy { background: transparent; border: 1px solid var(--border-default); color: var(--text-muted); flex: none; }
+.lk-copy:hover { color: var(--text-primary); border-color: var(--text-muted); }
+.lk-copy.ok { color: var(--st-done); border-color: var(--st-done); }
+.m-actions { grid-column: 1 / -1; min-width: 0; }
+.m-actions:empty { display: none; }
+.f .m-actions { margin-top: 4px; }
 .mat .kind {
   flex: none; width: 38px; height: 32px; border-radius: var(--radius-sm); display: grid; place-items: center;
   background: var(--bg-surface-2); color: var(--k, var(--color-accent)); font: 700 11px/1 var(--font-display); letter-spacing: .04em;
@@ -255,8 +276,10 @@ fieldset.mats legend { padding: 0 6px; font-size: 11px; letter-spacing: .12em; t
 }
 
 /* ---------- panel de recursos ---------- */
+.resitem .lk { margin-top: 8px; }
+.resitem .body .lk span { font-size: 12px; color: inherit; }
 .resitem {
-  display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--bg-base);
+  display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; background: var(--bg-base);
   border: 1px solid var(--border-default); border-radius: var(--radius-md); transition: var(--transition-base);
 }
 .resitem:hover { border-color: var(--color-accent); }
@@ -392,11 +415,12 @@ fieldset.mats legend { padding: 0 6px; font-size: 11px; letter-spacing: .12em; t
       <div class="matrow fixed">
         <label for="t_plantilla" class="m-fixed">Plantilla para empezar</label>
         <input id="t_plantilla" class="m-url" type="url" placeholder="Canva ya con la medida correcta">
+        <div class="m-actions" id="plantillaActions"></div>
       </div>
       <div id="matList" class="matlist"></div>
       <button class="btn ghost-accent sm" id="btnAddMat" type="button">+ Agregar material</button>
     </fieldset>
-    <div class="f"><label for="t_enlace">Enlace al diseño / avance <span class="lbl-note">lo pega quien hace la tarea</span></label><input id="t_enlace" type="url" placeholder="https://www.canva.com/design/…"></div>
+    <div class="f"><label for="t_enlace">Enlace al diseño / avance <span class="lbl-note">lo pega quien hace la tarea</span></label><input id="t_enlace" type="url" placeholder="https://www.canva.com/design/…"><div class="m-actions" id="enlaceActions"></div></div>
     <input type="hidden" id="t_materiales">
     <div class="stamp" id="t_stamp"></div>
     <div class="dlg-actions">
@@ -691,25 +715,70 @@ fieldset.mats legend { padding: 0 6px; font-size: 11px; letter-spacing: .12em; t
     }).join("\n");
   }
   var KINDS = [
-    { re: /canva\.(com|link)/i, tag: "CV", name: "Canva", color: "#3DD6D0" },
-    { re: /docs\.google\.com\/document/i, tag: "DOC", name: "Google Doc", color: "#378ADD" },
-    { re: /docs\.google\.com\/spreadsheets/i, tag: "XLS", name: "Google Sheets", color: "#3DD6D0" },
-    { re: /docs\.google\.com\/presentation/i, tag: "PPT", name: "Google Slides", color: "#E8A33D" },
-    { re: /drive\.google\.com\/(drive\/)?(u\/\d+\/)?folders/i, tag: "DRV", name: "Carpeta de Drive", color: "#E8A33D" },
-    { re: /drive\.google\.com/i, tag: "DRV", name: "Archivo de Drive", color: "#E8A33D" },
-    { re: /figma\.com/i, tag: "FIG", name: "Figma", color: "#C143BC" },
-    { re: /\.pdf(\?|#|$)/i, tag: "PDF", name: "PDF", color: "#E24B4A" }
+    { re: /canva\.(com|link)/i, tag: "CV", name: "Canva", verb: "Abrir en Canva", color: "#3DD6D0" },
+    { re: /docs\.google\.com\/document/i, tag: "DOC", name: "Google Doc", verb: "Abrir documento", color: "#378ADD" },
+    { re: /docs\.google\.com\/spreadsheets/i, tag: "XLS", name: "Google Sheets", verb: "Abrir hoja de cálculo", color: "#3DD6D0" },
+    { re: /docs\.google\.com\/presentation/i, tag: "PPT", name: "Google Slides", verb: "Abrir presentación", color: "#E8A33D" },
+    { re: /drive\.google\.com\/(drive\/)?(u\/\d+\/)?folders/i, tag: "DRV", name: "Carpeta de Drive", verb: "Abrir carpeta", color: "#E8A33D" },
+    { re: /drive\.google\.com/i, tag: "DRV", name: "Archivo de Drive", verb: "Abrir archivo", color: "#E8A33D" },
+    { re: /figma\.com/i, tag: "FIG", name: "Figma", verb: "Abrir en Figma", color: "#C143BC" },
+    { re: /\.pdf(\?|#|$)/i, tag: "PDF", name: "PDF", verb: "Abrir PDF", color: "#E24B4A" }
   ];
   function kindOf(url) {
     for (var i = 0; i < KINDS.length; i++) if (KINDS[i].re.test(url)) return KINDS[i];
     var host = ""; try { host = new URL(url).hostname.replace(/^www\./, ""); } catch (e) {}
-    return { tag: "WEB", name: host || "Enlace", color: "#B4B2A9" };
+    return { tag: "WEB", name: host || "Enlace", verb: "Abrir enlace", color: "#B4B2A9" };
   }
-  function matChip(label, url, extraClass) {
+  /** "Información de la convocatoria" -> "Abrir información de la convocatoria"; sin nombre, según el tipo de link. */
+  function openText(label, url) {
+    label = String(label || "").trim();
+    if (!label) return kindOf(url).verb;
+    if (/^[A-ZÁÉÍÓÚÑ][a-záéíóúñü]/.test(label)) label = label.charAt(0).toLowerCase() + label.slice(1);
+    return "Abrir " + label;
+  }
+  var ICON_OPEN = '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M9 2.5h4.5V7"/><path d="M13.5 2.5 7 9"/><path d="M12 9.5v3a1 1 0 0 1-1 1H3.5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3"/></svg>';
+  var ICON_COPY = '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.2"/><path d="M10.5 5.5V3.7a1.2 1.2 0 0 0-1.2-1.2H3.7a1.2 1.2 0 0 0-1.2 1.2v5.6a1.2 1.2 0 0 0 1.2 1.2h1.8"/></svg>';
+  /** Botones explícitos: abrir en pestaña nueva + copiar el link. */
+  function linkActions(label, url) {
+    return '<div class="lk">' +
+      '<a class="lk-open" href="' + esc(url) + '" target="_blank" rel="noopener">' + ICON_OPEN + '<span>' + esc(openText(label, url)) + '</span></a>' +
+      '<button class="lk-copy" type="button" data-url="' + esc(url) + '">' + ICON_COPY + '<span>Copiar link</span></button>' +
+      '</div>';
+  }
+  function matChip(label, url, extraClass, openLabel) {
     var k = kindOf(url);
-    return '<a class="mat ' + (extraClass || "") + '" href="' + esc(url) + '" target="_blank" rel="noopener">' +
-      '<span class="kind" style="--k:' + k.color + '">' + k.tag + '</span>' +
-      '<span class="txt"><b>' + esc(label || k.name) + '</b><small>' + esc(k.name) + '</small></span></a>';
+    return '<div class="mat ' + (extraClass || "") + '">' +
+      '<div class="mat-head"><span class="kind" style="--k:' + k.color + '">' + k.tag + '</span>' +
+      '<span class="txt"><b>' + esc(label || k.name) + '</b><small>' + esc(k.name) + '</small></span></div>' +
+      linkActions(openLabel || label, url) + '</div>';
+  }
+  function copyText(text, btn) {
+    function done(ok) {
+      toast(ok ? "Link copiado" : "No pude copiar. Mantén presionado el link para copiarlo.");
+      if (ok && btn) {
+        var span = btn.querySelector("span"); var prev = span.textContent;
+        btn.classList.add("ok"); span.textContent = "¡Copiado!";
+        setTimeout(function () { btn.classList.remove("ok"); span.textContent = prev; }, 1600);
+      }
+    }
+    function fallback() {
+      try {
+        var ta = document.createElement("textarea");
+        ta.value = text; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0";
+        (btn && btn.closest("dialog") || document.body).appendChild(ta);
+        ta.select(); var ok = document.execCommand("copy"); ta.remove(); done(ok);
+      } catch (e) { done(false); }
+    }
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(function () { done(true); }, fallback);
+    else fallback();
+  }
+  document.addEventListener("click", function (ev) {
+    var b = ev.target.closest && ev.target.closest(".lk-copy");
+    if (b) { ev.preventDefault(); copyText(b.getAttribute("data-url"), b); }
+  });
+  function setActions(el, label, url) {
+    if (!el) return;
+    el.innerHTML = isUrl(url) ? linkActions(label, url) : "";
   }
   function currentMats() {
     return Array.prototype.map.call($("matList").querySelectorAll(".matrow"), function (row) {
@@ -719,10 +788,16 @@ fieldset.mats legend { padding: 0 6px; font-size: 11px; letter-spacing: .12em; t
   function renderMatView() {
     var html = "";
     var p = $("t_plantilla").value.trim();
-    if (isUrl(p)) html += matChip("Plantilla para empezar", p);
-    currentMats().forEach(function (m) { if (isUrl(m.url)) html += matChip(m.label, m.url); });
+    if (isUrl(p)) html += matChip("Plantilla para empezar", p, "", "Plantilla inicial");
+    setActions($("plantillaActions"), "Plantilla inicial", p);
+    Array.prototype.forEach.call($("matList").querySelectorAll(".matrow"), function (row) {
+      var label = row.querySelector(".m-label").value, url = row.querySelector(".m-url").value.trim();
+      if (isUrl(url)) html += matChip(label, url);
+      setActions(row.querySelector(".m-actions"), label, url);
+    });
     var e = $("t_enlace").value.trim();
-    if (isUrl(e)) html += matChip("Diseño / avance", e, "design");
+    if (isUrl(e)) html += matChip("Diseño / avance", e, "design", "Diseño / avance");
+    setActions($("enlaceActions"), "Diseño / avance", e);
     $("matLinks").innerHTML = html;
     $("matView").hidden = !html;
   }
@@ -733,7 +808,8 @@ fieldset.mats legend { padding: 0 6px; font-size: 11px; letter-spacing: .12em; t
     row.innerHTML =
       '<input class="m-label" id="m_label_' + n + '" aria-label="Nombre del material" placeholder="Ej. Especificaciones" maxlength="60">' +
       '<input class="m-url" id="m_url_' + n + '" type="url" aria-label="Link del material" placeholder="https://drive.google.com/…">' +
-      '<button class="m-del" type="button" aria-label="Quitar material" title="Quitar">×</button>';
+      '<button class="m-del" type="button" aria-label="Quitar material" title="Quitar">×</button>' +
+      '<div class="m-actions"></div>';
     row.querySelector(".m-label").value = label || "";
     row.querySelector(".m-url").value = url || "";
     $("matList").appendChild(row);
@@ -833,8 +909,8 @@ fieldset.mats legend { padding: 0 6px; font-size: 11px; letter-spacing: .12em; t
     list.innerHTML = state.recursos.length ? state.recursos.map(function (r) {
       var safe = /^https?:\/\//.test(r.enlace);
       return '<div class="resitem"><span class="ic"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 9a3 3 0 0 0 4.2 0l2-2a3 3 0 0 0-4.2-4.2l-.8.8"/><path d="M9 7a3 3 0 0 0-4.2 0l-2 2a3 3 0 0 0 4.2 4.2l.8-.8"/></svg></span>' +
-        '<span class="body"><b>' + esc(r.etiqueta) + '</b>' + (r.notas ? '<span>' + esc(r.notas) + '</span>' : '') + '</span>' +
-        (safe ? '<a class="go" href="' + esc(r.enlace) + '" target="_blank" rel="noopener">Abrir →</a>' : '<span class="go" style="color:var(--text-muted)">Sin link</span>') + '</div>';
+        '<span class="body"><b>' + esc(r.etiqueta) + '</b>' + (r.notas ? '<span>' + esc(r.notas) + '</span>' : '') +
+        (safe ? linkActions(r.etiqueta, r.enlace) : '<span class="go" style="color:var(--text-muted)">Sin link</span>') + '</span></div>';
     }).join("") : '<div class="resempty">Irvin todavía no agrega recursos aquí. Pídele el link de la identidad gráfica o del Drive.</div>';
     dlgRecursos.showModal();
   });
