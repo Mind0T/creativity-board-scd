@@ -834,7 +834,10 @@ fieldset.mats legend { padding: 0 6px; font-size: 11px; letter-spacing: .12em; t
     FIELDS.forEach(function (f) { $("t_" + f).value = t[f] || ""; });
     if (!$("t_responsable").value) $("t_responsable").selectedIndex = 0;
     $("matList").innerHTML = "";
-    parseMats(t.materiales).forEach(function (m) { addMatRow(m.label, m.url); });
+    // Tarea nueva: trae por default los recursos generales (pestaña "Recursos" de la hoja).
+    var mats = task ? parseMats(t.materiales)
+      : state.recursos.filter(function (r) { return isUrl(r.enlace); }).map(function (r) { return { label: r.etiqueta, url: r.enlace }; });
+    mats.forEach(function (m) { addMatRow(m.label, m.url); });
     renderMatView();
     $("t_stamp").textContent = task ? "Última edición: " + (task.actualizado || "—") + " por " + (task.actualizadoPor || "—") : "";
     $("btnDelete").hidden = !task; disarm();

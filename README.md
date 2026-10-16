@@ -75,7 +75,7 @@ Si algún día necesitas cambiar la clave: vuelve a correr `generarSecreto()` y 
   - **Materiales**: un link por línea, con nombre opcional: `Especificaciones | https://docs.google.com/…`. También acepta `Nombre: https://…` o el link solo. En el tablero aparecen como botones en "Para hacer esta tarea", con el tipo detectado (Canva, Google Doc, carpeta de Drive, PDF…).
   - **Enlace**: el diseño o avance de quien hace la tarea.
 - **Equipo**: Nombre · Color (hex). Una persona nueva aquí aparece en el tablero.
-- **Recursos**: Etiqueta · Enlace · Notas. Aparecen en el botón **Recursos** del tablero (identidad gráfica, Drive de elementos, etc.). Las filas sin enlace no se muestran.
+- **Recursos**: Etiqueta · Enlace · Notas. Aparecen en el botón **Recursos** del tablero (identidad gráfica, Drive de elementos, etc.) y **se precargan como materiales en cada tarea nueva**. Las filas sin enlace no se muestran.
 - **Listas**: valores de los menús desplegables.
 
 El script ubica cada columna de **Tareas** por el texto de su encabezado, así que puedes reordenarlas o agregar columnas propias. Lo único que no debes cambiar es el texto de los encabezados.
