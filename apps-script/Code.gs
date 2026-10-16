@@ -19,14 +19,18 @@ const SHEET_EQUIPO = 'Equipo';
 const SHEET_RECURSOS = 'Recursos';
 const TZ = 'America/Mexico_City';
 
-// Orden EXACTO de las columnas en la pestaña "Tareas"
-// "enlace"   = link al avance/diseño terminado (lo pega quien hace la tarea)
-// "plantilla"= link al archivo base para empezar (ya con el tamaño correcto)
-const KEYS = [
-  'id', 'titulo', 'descripcion', 'responsable', 'estado', 'prioridad',
-  'fecha', 'notas', 'enlace', 'plantilla', 'creado', 'actualizado', 'actualizadoPor'
-];
-const COL = KEYS.reduce((acc, k, i) => (acc[k] = i + 1, acc), {});
+// Las columnas de "Tareas" se ubican por el TEXTO del encabezado (fila 1),
+// no por su posición: puedes reordenarlas o agregar columnas tuyas sin romper nada.
+// "enlace"    = link al avance/diseño (lo pega quien hace la tarea)
+// "plantilla" = link al archivo base para empezar (ya con el tamaño correcto)
+const HEADERS = {
+  id: 'ID', titulo: 'Tarea', descripcion: 'Descripción', responsable: 'Responsable',
+  estado: 'Estado', prioridad: 'Prioridad', fecha: 'Fecha límite', notas: 'Notas',
+  enlace: 'Enlace', plantilla: 'Plantilla', creado: 'Creado', actualizado: 'Actualizado',
+  actualizadoPor: 'Actualizado por'
+};
+const KEYS = Object.keys(HEADERS);
+const REQUIRED = ['id', 'titulo', 'estado'];
 
 const ESTADOS = ['To Do', 'Doing', 'Done'];
 const PRIORIDADES = ['Urgente', 'Importante', 'Normal'];
@@ -74,13 +78,14 @@ function doPost(e) {
 
 function getBoard_() {
   const sh = sheet_(SHEET_TAREAS);
+  const cols = colMap_(sh);
   const last = sh.getLastRow();
   const tasks = [];
   if (last >= 2) {
-    sh.getRange(2, 1, last - 1, KEYS.length).getValues().forEach(r => {
-      if (!r[0]) return;
+    sh.getRange(2, 1, last - 1, sh.getLastColumn()).getValues().forEach(r => {
+      if (!r[cols.id - 1]) return;
       const t = {};
-      KEYS.forEach((k, i) => t[k] = fmt_(k, r[i]));
+      KEYS.forEach(k => t[k] = cols[k] ? fmt_(k, r[cols[k] - 1]) : '');
       if (ESTADOS.indexOf(t.estado) === -1) t.estado = 'To Do';
       tasks.push(t);
     });
@@ -107,14 +112,17 @@ function saveTask_(task, user) {
       actualizadoPor: clean_(user).slice(0, 60) || 'Anónimo'
     };
 
-    const row = task.id ? findRow_(sh, task.id) : -1;
+    const cols = colMap_(sh);
+    const row = task.id ? findRow_(sh, cols, task.id) : -1;
     if (row === -1) {
-      const id = nextId_(sh);
-      sh.appendRow(KEYS.map(k => k === 'id' ? id : k === 'creado' ? now_() : (values[k] !== undefined ? values[k] : '')));
+      values.id = nextId_(sh, cols);
+      values.creado = now_();
+      const width = sh.getLastColumn();
+      const full = new Array(width).fill('');
+      Object.keys(values).forEach(k => { if (cols[k]) full[cols[k] - 1] = values[k]; });
+      sh.appendRow(full);
     } else {
-      const mid = ['titulo','descripcion','responsable','estado','prioridad','fecha','notas','enlace','plantilla'].map(k => values[k]);
-      sh.getRange(row, COL.titulo, 1, mid.length).setValues([mid]);
-      sh.getRange(row, COL.actualizado, 1, 2).setValues([[values.actualizado, values.actualizadoPor]]);
+      writeRow_(sh, cols, row, values);
     }
     return getBoard_();
   });
@@ -124,10 +132,10 @@ function moveTask_(id, estado, user) {
   if (ESTADOS.indexOf(estado) === -1) throw new Error('Estado no válido: ' + estado);
   return withLock_(() => {
     const sh = sheet_(SHEET_TAREAS);
-    const row = findRow_(sh, id);
+    const cols = colMap_(sh);
+    const row = findRow_(sh, cols, id);
     if (row === -1) throw new Error('No encontré la tarea ' + id + '. Alguien pudo borrarla.');
-    sh.getRange(row, COL.estado).setValue(estado);
-    sh.getRange(row, COL.actualizado, 1, 2).setValues([[now_(), clean_(user).slice(0, 60) || 'Anónimo']]);
+    writeRow_(sh, cols, row, { estado: estado, actualizado: now_(), actualizadoPor: clean_(user).slice(0, 60) || 'Anónimo' });
     return getBoard_();
   });
 }
@@ -135,7 +143,7 @@ function moveTask_(id, estado, user) {
 function deleteTask_(id) {
   return withLock_(() => {
     const sh = sheet_(SHEET_TAREAS);
-    const row = findRow_(sh, id);
+    const row = findRow_(sh, colMap_(sh), id);
     if (row !== -1) sh.deleteRow(row);
     return getBoard_();
   });
@@ -169,19 +177,43 @@ function sheet_(name) {
   return sh;
 }
 
-function findRow_(sh, id) {
+/** { clave: númeroDeColumna } leyendo los encabezados de la fila 1. */
+function colMap_(sh) {
+  const head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0]
+    .map(h => String(h).trim().toLowerCase());
+  const cols = {};
+  KEYS.forEach(k => {
+    const i = head.indexOf(HEADERS[k].toLowerCase());
+    if (i > -1) cols[k] = i + 1;
+  });
+  const missing = REQUIRED.filter(k => !cols[k]);
+  if (missing.length) {
+    throw new Error('En la pestaña "Tareas" falta el encabezado: ' + missing.map(k => '"' + HEADERS[k] + '"').join(', '));
+  }
+  return cols;
+}
+
+/** Escribe solo las columnas que existen, en una sola llamada para la fila. */
+function writeRow_(sh, cols, row, values) {
+  const range = sh.getRange(row, 1, 1, sh.getLastColumn());
+  const current = range.getValues()[0];
+  Object.keys(values).forEach(k => { if (cols[k]) current[cols[k] - 1] = values[k]; });
+  range.setValues([current]);
+}
+
+function findRow_(sh, cols, id) {
   const last = sh.getLastRow();
   if (last < 2 || !id) return -1;
-  const ids = sh.getRange(2, 1, last - 1, 1).getValues();
+  const ids = sh.getRange(2, cols.id, last - 1, 1).getValues();
   for (let i = 0; i < ids.length; i++) if (String(ids[i][0]) === String(id)) return i + 2;
   return -1;
 }
 
-function nextId_(sh) {
+function nextId_(sh, cols) {
   const last = sh.getLastRow();
   let max = 0;
   if (last >= 2) {
-    sh.getRange(2, 1, last - 1, 1).getValues().forEach(r => {
+    sh.getRange(2, cols.id, last - 1, 1).getValues().forEach(r => {
       const m = String(r[0]).match(/(\d+)$/);
       if (m) max = Math.max(max, parseInt(m[1], 10));
     });

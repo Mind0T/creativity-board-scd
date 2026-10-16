@@ -70,11 +70,15 @@ Si algún día necesitas cambiar la clave: vuelve a correr `generarSecreto()` y 
 
 ## La hoja
 
-- **Tareas**: ID · Tarea · Descripción · Responsable · Estado · Prioridad · Fecha límite · Notas · Enlace · Creado · Actualizado · Actualizado por
+- **Tareas**: ID · Tarea · Descripción · Responsable · Estado · Prioridad · Fecha límite · Notas · Enlace · Creado · Actualizado · Actualizado por · Plantilla
+  - **Plantilla**: archivo base para empezar (ej. un Canva ya con el tamaño de la araña o del gafete).
+  - **Enlace**: el diseño o avance de quien hace la tarea.
 - **Equipo**: Nombre · Color (hex). Una persona nueva aquí aparece en el tablero.
+- **Recursos**: Etiqueta · Enlace · Notas. Aparecen en el botón **Recursos** del tablero (identidad gráfica, Drive de elementos, etc.). Las filas sin enlace no se muestran.
 - **Listas**: valores de los menús desplegables.
 
-No cambies el orden de las columnas de **Tareas**. Lo que se edite directo en la hoja aparece en el tablero en máximo 30 segundos.
+El script ubica cada columna de **Tareas** por el texto de su encabezado, así que puedes reordenarlas o agregar columnas propias. Lo único que no debes cambiar es el texto de los encabezados.
+Lo que se edite directo en la hoja aparece en el tablero en máximo 30 segundos.
 
 ## Desarrollo local
 
