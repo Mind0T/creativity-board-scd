@@ -161,10 +161,15 @@ function deleteTask_(id) {
 function getTeam_() {
   const sh = sheet_(SHEET_EQUIPO);
   const last = sh.getLastRow();
-  if (last < 2) return [{ nombre: 'Sin asignar', color: '#73726C' }];
-  return sh.getRange(2, 1, last - 1, 2).getValues()
+  if (last < 2) return [{ nombre: 'Sin asignar', color: '#73726C', whatsapp: '' }];
+  // Columnas: Nombre · Color · WhatsApp (10 dígitos o con lada de país)
+  return sh.getRange(2, 1, last - 1, 3).getValues()
     .filter(r => String(r[0]).trim())
-    .map(r => ({ nombre: String(r[0]).trim(), color: String(r[1] || '#73726C').trim() }));
+    .map(r => ({
+      nombre: String(r[0]).trim(),
+      color: String(r[1] || '#73726C').trim(),
+      whatsapp: String(r[2] || '').replace(/\D/g, '').slice(0, 15)
+    }));
 }
 
 /** Recursos generales del proyecto (pestaña "Recursos": Etiqueta · Enlace · Notas). */

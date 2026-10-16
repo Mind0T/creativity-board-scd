@@ -74,12 +74,18 @@ Si algún día necesitas cambiar la clave: vuelve a correr `generarSecreto()` y 
   - **Plantilla**: archivo base para empezar (ej. un Canva ya con el tamaño de la araña o del gafete).
   - **Materiales**: un link por línea, con nombre opcional: `Especificaciones | https://docs.google.com/…`. También acepta `Nombre: https://…` o el link solo. En el tablero aparecen como botones en "Para hacer esta tarea", con el tipo detectado (Canva, Google Doc, carpeta de Drive, PDF…).
   - **Enlace**: el diseño o avance de quien hace la tarea.
-- **Equipo**: Nombre · Color (hex). Una persona nueva aquí aparece en el tablero.
+- **Equipo**: Nombre · Color (hex) · WhatsApp (10 dígitos). Una persona nueva aquí aparece en el tablero. El WhatsApp sirve para el botón «Avisar por WhatsApp»; los números viven solo en la hoja, nunca en este repo (es público).
 - **Recursos**: Etiqueta · Enlace · Notas. Aparecen en el botón **Recursos** del tablero (identidad gráfica, Drive de elementos, etc.) y **se precargan como materiales en cada tarea nueva**. Las filas sin enlace no se muestran.
 - **Listas**: valores de los menús desplegables.
 
 El script ubica cada columna de **Tareas** por el texto de su encabezado, así que puedes reordenarlas o agregar columnas propias. Lo único que no debes cambiar es el texto de los encabezados.
 Lo que se edite directo en la hoja aparece en el tablero en máximo 30 segundos.
+
+## Funciones del tablero
+
+- **Link directo a una tarea:** `https://…vercel.app/#CR-003` abre esa tarea (es el link que va en el WhatsApp).
+- **Avisar por WhatsApp:** al asignar a alguien y guardar, aparece un aviso con el botón; también está junto a Responsable. Abre WhatsApp con el chat y el mensaje listos (tarea, prioridad, fecha, notas, materiales y link). El envío lo confirma quien asigna: mandar mensajes automáticos requiere la API de WhatsApp Business.
+- **Agregar al calendario:** con fecha límite, botones para Google Calendar y para descargar un `.ics` (Apple, Outlook) con recordatorio un día antes.
 
 ## Desarrollo local
 
