@@ -207,6 +207,20 @@ dialog h2 { margin: 0; font: 700 26px/1.1 var(--font-display); color: var(--text
 .dlg-actions .right { display: flex; gap: 8px; }
 .linkout { color: var(--color-link); overflow-wrap: anywhere; }
 
+/* ---------- panel de recursos ---------- */
+.resitem {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--bg-base);
+  border: 1px solid var(--border-default); border-radius: var(--radius-md); transition: var(--transition-base);
+}
+.resitem:hover { border-color: var(--color-accent); }
+.resitem .ic { flex: none; width: 34px; height: 34px; border-radius: var(--radius-sm); background: var(--bg-surface-2);
+  display: grid; place-items: center; color: var(--color-accent); }
+.resitem .body { min-width: 0; flex: 1; }
+.resitem .body b { display: block; font: 600 14px/1.3 var(--font-body); color: var(--text-primary); }
+.resitem .body span { font-size: 11px; color: var(--text-muted); }
+.resitem a.go { flex: none; font-size: 12px; color: var(--color-link); white-space: nowrap; }
+.resempty { font-size: 13px; color: var(--text-muted); text-align: center; padding: 20px; border: 1px dashed var(--border-default); border-radius: var(--radius-md); }
+
 .toast {
   position: fixed; z-index: 5; left: 50%; transform: translateX(-50%);
   bottom: calc(20px + env(safe-area-inset-bottom, 0px));
@@ -276,6 +290,7 @@ dialog h2 { margin: 0; font: 700 26px/1.1 var(--font-display); color: var(--text
         <label for="me">Soy</label>
         <select id="me"></select>
       </div>
+      <button class="btn ghost" id="btnRecursos" type="button">Recursos</button>
       <button class="btn ghost-accent" id="btnNew" type="button">+ Nueva tarea</button>
     </div>
   </div>
@@ -298,6 +313,15 @@ dialog h2 { margin: 0; font: 700 26px/1.1 var(--font-display); color: var(--text
   <div class="err" id="gateErr" role="alert"></div>
 </form>
 
+<dialog id="dlgRecursos">
+  <form method="dialog" style="display:grid;gap:16px;padding:24px;">
+    <h2 style="margin:0;font:700 26px/1.1 var(--font-display);color:var(--text-primary);">Recursos del proyecto</h2>
+    <p style="margin:0;font-size:13px;color:var(--text-muted);">Identidad gráfica, elementos y materiales compartidos para todas las piezas de Creativity.</p>
+    <div id="resList" style="display:grid;gap:10px;"></div>
+    <div class="dlg-actions"><div></div><div class="right"><button class="btn ghost" type="submit">Cerrar</button></div></div>
+  </form>
+</dialog>
+
 <dialog id="dlg">
   <form id="frm" method="dialog">
     <h2 id="dlgTitle">Nueva tarea</h2>
@@ -311,7 +335,10 @@ dialog h2 { margin: 0; font: 700 26px/1.1 var(--font-display); color: var(--text
       <div class="f"><label for="t_fecha">Fecha límite</label><input id="t_fecha" type="date"></div>
     </div>
     <div class="f"><label for="t_notas">Notas</label><textarea id="t_notas" rows="3" placeholder="Ideas, feedback, pendientes…"></textarea></div>
-    <div class="f"><label for="t_enlace">Enlace al diseño</label><input id="t_enlace" type="url" placeholder="https://www.canva.com/design/…"></div>
+    <div class="grid2">
+      <div class="f"><label for="t_plantilla">Plantilla para empezar</label><input id="t_plantilla" type="url" placeholder="Canva ya con el tamaño correcto…"></div>
+      <div class="f"><label for="t_enlace">Enlace al diseño / avance</label><input id="t_enlace" type="url" placeholder="https://www.canva.com/design/…"></div>
+    </div>
     <div class="stamp" id="t_stamp"></div>
     <div class="dlg-actions">
       <button class="btn danger" id="btnDelete" type="button">Borrar</button>
@@ -368,10 +395,13 @@ dialog h2 { margin: 0; font: 700 26px/1.1 var(--font-display); color: var(--text
       ["CR-006","Propuestas de swag","Playeras (voluntarios, organizadores y general), plumas y tote bags","Sin asignar","To Do","Urgente"]
     ].map(function (r) {
       return { id: r[0], titulo: r[1], descripcion: r[2], responsable: r[3], estado: r[4], prioridad: r[5],
-               fecha: "", notas: "", enlace: "", creado: s, actualizado: s, actualizadoPor: "Irvin" };
+               fecha: "", notas: "", enlace: "", plantilla: "", creado: s, actualizado: s, actualizadoPor: "Irvin" };
     });
+    var recursos = [
+      { etiqueta: "Identidad gráfica (Canva)", enlace: "https://www.canva.com/design/DAHWXNICiKQ/EsrE2XvZOCf_kJAGxyh3jg/edit", notas: "Logos, tipografías, iconografía y elementos gráficos del evento" }
+    ];
     function stamp() { var d = new Date(); return d.toISOString().slice(0, 10) + " " + d.toTimeString().slice(0, 5); }
-    function board() { return { ok: true, tasks: JSON.parse(JSON.stringify(tasks)), team: team.slice(), serverTime: stamp() }; }
+    function board() { return { ok: true, tasks: JSON.parse(JSON.stringify(tasks)), team: team.slice(), recursos: recursos.slice(), serverTime: stamp() }; }
     function wait(v) { return new Promise(function (r) { setTimeout(function () { r(v); }, 250); }); }
     return {
       getBoard: function () { return wait(board()); },
@@ -401,7 +431,7 @@ dialog h2 { margin: 0; font: 700 26px/1.1 var(--font-display); color: var(--text
   };
 
   /* ------------ estado ------------ */
-  var state = { tasks: [], team: [], person: "Todos", prio: "Todas", q: "", me: "", busy: 0, dragging: false };
+  var state = { tasks: [], team: [], recursos: [], person: "Todos", prio: "Todas", q: "", me: "", busy: 0, dragging: false };
   var $ = function (id) { return document.getElementById(id); };
 
   function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
@@ -436,6 +466,7 @@ dialog h2 { margin: 0; font: 700 26px/1.1 var(--font-display); color: var(--text
   function apply(res) {
     state.tasks = res.tasks || [];
     state.team = res.team || [];
+    state.recursos = res.recursos || [];
     setSync("", (MODE === "live" ? "Sincronizado con la hoja · " : "Modo demo · ") + (res.serverTime || "").slice(11));
     render();
   }
@@ -542,6 +573,7 @@ dialog h2 { margin: 0; font: 700 26px/1.1 var(--font-display); color: var(--text
     if (idx > 0) moves += '<button type="button" data-move="' + ESTADOS[idx - 1] + '">← ' + ESTADOS[idx - 1] + "</button>";
     if (idx < 2) moves += '<button type="button" data-move="' + ESTADOS[idx + 1] + '">' + ESTADOS[idx + 1] + " →</button>";
     var notes = t.notas ? '<span title="Tiene notas"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 2.5h10v8l-3 3H3z"/><path d="M5.5 6h5M5.5 8.5h3"/></svg></span>' : "";
+    var tmpl = t.plantilla ? '<span title="Tiene plantilla para empezar"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2.5" y="2.5" width="11" height="11" rx="1.5"/><path d="M2.5 6.5h11"/></svg></span>' : "";
     var link = t.enlace ? '<span title="Tiene enlace al diseño"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 9a3 3 0 0 0 4.2 0l2-2a3 3 0 0 0-4.2-4.2l-.8.8"/><path d="M9 7a3 3 0 0 0-4.2 0l-2 2a3 3 0 0 0 4.2 4.2l.8-.8"/></svg></span>' : "";
     return '<article class="card prio-' + esc(t.prioridad) + '" draggable="true" tabindex="0" data-id="' + esc(t.id) + '" data-estado="' + esc(t.estado) + '" aria-label="' + esc(t.titulo) + '">' +
       '<div class="card-top"><span class="tid">' + esc(t.id) + '</span><span class="pill ' + esc(t.prioridad) + '">' + esc(t.prioridad) + "</span></div>" +
@@ -550,7 +582,7 @@ dialog h2 { margin: 0; font: 700 26px/1.1 var(--font-display); color: var(--text
       '<div class="card-foot">' +
         (none ? '<span class="who none">Sin asignar</span>'
               : '<span class="who"><span class="avatar" style="' + avatarStyle(t.responsable) + '">' + esc(initial(t.responsable)) + "</span>" + esc(t.responsable) + "</span>") +
-        '<span class="meta">' + due + notes + link + "</span>" +
+        '<span class="meta">' + due + notes + tmpl + link + "</span>" +
       "</div>" +
       '<div class="moves">' + moves + "</div></article>";
   }
@@ -581,15 +613,20 @@ dialog h2 { margin: 0; font: 700 26px/1.1 var(--font-display); color: var(--text
   }
 
   var dlg = $("dlg");
-  var FIELDS = ["titulo", "descripcion", "responsable", "estado", "prioridad", "fecha", "notas", "enlace"];
+  var dlgRecursos = $("dlgRecursos");
+  var FIELDS = ["titulo", "descripcion", "responsable", "estado", "prioridad", "fecha", "notas", "enlace", "plantilla"];
   function openForm(task) {
     var t = task || { estado: "To Do", prioridad: "Normal", responsable: state.person !== "Todos" ? state.person : "Sin asignar" };
     $("dlgTitle").textContent = task ? "Editar " + task.id : "Nueva tarea";
     $("t_id").value = task ? task.id : "";
     FIELDS.forEach(function (f) { $("t_" + f).value = t[f] || ""; });
     if (!$("t_responsable").value) $("t_responsable").selectedIndex = 0;
-    $("t_stamp").innerHTML = task ? "Última edición: " + esc(task.actualizado) + " por " + esc(task.actualizadoPor) +
-      (task.enlace && /^https?:\/\//.test(task.enlace) ? ' · <a class="linkout" href="' + esc(task.enlace) + '" target="_blank" rel="noopener">Abrir diseño</a>' : "") : "";
+    var stampLinks = "";
+    if (task) {
+      if (task.plantilla && /^https?:\/\//.test(task.plantilla)) stampLinks += ' · <a class="linkout" href="' + esc(task.plantilla) + '" target="_blank" rel="noopener">Abrir plantilla</a>';
+      if (task.enlace && /^https?:\/\//.test(task.enlace)) stampLinks += ' · <a class="linkout" href="' + esc(task.enlace) + '" target="_blank" rel="noopener">Abrir diseño</a>';
+    }
+    $("t_stamp").innerHTML = task ? "Última edición: " + esc(task.actualizado) + " por " + esc(task.actualizadoPor) + stampLinks : "";
     $("btnDelete").hidden = !task; disarm();
     dlg.showModal(); $("t_titulo").focus();
   }
@@ -653,6 +690,16 @@ dialog h2 { margin: 0; font: 700 26px/1.1 var(--font-display); color: var(--text
   $("q").addEventListener("input", function () { state.q = this.value; render(); });
   $("me").addEventListener("change", function () { state.me = this.value; store("creativity.me", this.value); });
   $("btnNew").addEventListener("click", function () { openForm(null); });
+  $("btnRecursos").addEventListener("click", function () {
+    var list = $("resList");
+    list.innerHTML = state.recursos.length ? state.recursos.map(function (r) {
+      var safe = /^https?:\/\//.test(r.enlace);
+      return '<div class="resitem"><span class="ic"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 9a3 3 0 0 0 4.2 0l2-2a3 3 0 0 0-4.2-4.2l-.8.8"/><path d="M9 7a3 3 0 0 0-4.2 0l-2 2a3 3 0 0 0 4.2 4.2l.8-.8"/></svg></span>' +
+        '<span class="body"><b>' + esc(r.etiqueta) + '</b>' + (r.notas ? '<span>' + esc(r.notas) + '</span>' : '') + '</span>' +
+        (safe ? '<a class="go" href="' + esc(r.enlace) + '" target="_blank" rel="noopener">Abrir →</a>' : '<span class="go" style="color:var(--text-muted)">Sin link</span>') + '</div>';
+    }).join("") : '<div class="resempty">Irvin todavía no agrega recursos aquí. Pídele el link de la identidad gráfica o del Drive.</div>';
+    dlgRecursos.showModal();
+  });
   $("btnRefresh").addEventListener("click", load);
 
   /* ------------ fondo: cometas del design system (opacidad máx 0.22) ------------ */

@@ -16,12 +16,15 @@
 
 const SHEET_TAREAS = 'Tareas';
 const SHEET_EQUIPO = 'Equipo';
+const SHEET_RECURSOS = 'Recursos';
 const TZ = 'America/Mexico_City';
 
 // Orden EXACTO de las columnas en la pestaña "Tareas"
+// "enlace"   = link al avance/diseño terminado (lo pega quien hace la tarea)
+// "plantilla"= link al archivo base para empezar (ya con el tamaño correcto)
 const KEYS = [
   'id', 'titulo', 'descripcion', 'responsable', 'estado', 'prioridad',
-  'fecha', 'notas', 'enlace', 'creado', 'actualizado', 'actualizadoPor'
+  'fecha', 'notas', 'enlace', 'plantilla', 'creado', 'actualizado', 'actualizadoPor'
 ];
 const COL = KEYS.reduce((acc, k, i) => (acc[k] = i + 1, acc), {});
 
@@ -82,7 +85,7 @@ function getBoard_() {
       tasks.push(t);
     });
   }
-  return { ok: true, tasks: tasks, team: getTeam_(), estados: ESTADOS,
+  return { ok: true, tasks: tasks, team: getTeam_(), recursos: getRecursos_(), estados: ESTADOS,
            prioridades: PRIORIDADES, serverTime: now_() };
 }
 
@@ -99,6 +102,7 @@ function saveTask_(task, user) {
       fecha: parseDate_(task.fecha),
       notas: clean_(task.notas).slice(0, 5000),
       enlace: clean_(task.enlace).slice(0, 1000),
+      plantilla: clean_(task.plantilla).slice(0, 1000),
       actualizado: now_(),
       actualizadoPor: clean_(user).slice(0, 60) || 'Anónimo'
     };
@@ -108,7 +112,7 @@ function saveTask_(task, user) {
       const id = nextId_(sh);
       sh.appendRow(KEYS.map(k => k === 'id' ? id : k === 'creado' ? now_() : (values[k] !== undefined ? values[k] : '')));
     } else {
-      const mid = ['titulo','descripcion','responsable','estado','prioridad','fecha','notas','enlace'].map(k => values[k]);
+      const mid = ['titulo','descripcion','responsable','estado','prioridad','fecha','notas','enlace','plantilla'].map(k => values[k]);
       sh.getRange(row, COL.titulo, 1, mid.length).setValues([mid]);
       sh.getRange(row, COL.actualizado, 1, 2).setValues([[values.actualizado, values.actualizadoPor]]);
     }
@@ -146,6 +150,17 @@ function getTeam_() {
   return sh.getRange(2, 1, last - 1, 2).getValues()
     .filter(r => String(r[0]).trim())
     .map(r => ({ nombre: String(r[0]).trim(), color: String(r[1] || '#73726C').trim() }));
+}
+
+/** Recursos generales del proyecto (pestaña "Recursos": Etiqueta · Enlace · Notas). */
+function getRecursos_() {
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_RECURSOS);
+  if (!sh) return [];
+  const last = sh.getLastRow();
+  if (last < 2) return [];
+  return sh.getRange(2, 1, last - 1, 3).getValues()
+    .filter(r => String(r[0]).trim() && String(r[1]).trim())
+    .map(r => ({ etiqueta: String(r[0]).trim(), enlace: String(r[1]).trim(), notas: String(r[2] || '').trim() }));
 }
 
 function sheet_(name) {
