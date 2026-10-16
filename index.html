@@ -207,6 +207,53 @@ dialog h2 { margin: 0; font: 700 26px/1.1 var(--font-display); color: var(--text
 .dlg-actions .right { display: flex; gap: 8px; }
 .linkout { color: var(--color-link); overflow-wrap: anywhere; }
 
+/* ---------- materiales por tarea ---------- */
+.matview { display: grid; gap: 8px; }
+.matview-title { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--color-accent); }
+.matlinks { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+.mat {
+  display: flex; align-items: center; gap: 10px; padding: 9px 12px 9px 9px; min-width: 0;
+  background: var(--bg-base); border: 1px solid var(--border-default); border-radius: var(--radius-md);
+  color: var(--text-primary); text-decoration: none; transition: var(--transition-base);
+}
+.mat:hover { border-color: var(--color-accent); box-shadow: var(--glow-primary); }
+.mat .kind {
+  flex: none; width: 38px; height: 32px; border-radius: var(--radius-sm); display: grid; place-items: center;
+  background: var(--bg-surface-2); color: var(--k, var(--color-accent)); font: 700 11px/1 var(--font-display); letter-spacing: .04em;
+}
+.mat .txt { min-width: 0; display: grid; }
+.mat .txt b { font-weight: 400; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mat .txt small { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); }
+.mat.design { border-style: dashed; }
+
+fieldset.mats { margin: 0; padding: 14px; display: grid; gap: 10px; border: 1px solid var(--border-default); border-radius: var(--radius-md); }
+fieldset.mats legend { padding: 0 6px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-muted); }
+.mats-hint { margin: 0; font-size: 12px; color: var(--text-muted); }
+.matlist { display: grid; gap: 8px; }
+.matlist:empty { display: none; }
+.matrow { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr) 38px; gap: 8px; align-items: center; }
+.matrow.fixed { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr) 38px; }
+.m-fixed { font-size: 12px; color: var(--text-secondary); padding-left: 2px; }
+.matrow input {
+  width: 100%; min-width: 0; min-height: 40px; border: 1px solid var(--border-default); border-radius: var(--radius-sm);
+  padding: 8px 10px; background: var(--bg-base); color: var(--text-primary); font-size: 13px; transition: var(--transition-base);
+}
+.matrow input:focus { outline: none; border-color: var(--color-accent); box-shadow: var(--glow-accent); }
+.matrow input::placeholder { color: var(--text-muted); }
+.m-del {
+  width: 38px; height: 38px; border: 1px solid var(--border-default); background: transparent; color: var(--text-muted);
+  border-radius: var(--radius-sm); cursor: pointer; font-size: 16px; transition: var(--transition-base);
+}
+.m-del:hover { color: var(--color-error); border-color: var(--color-error); }
+.btn.sm { height: 34px; padding: 0 12px; font-size: 12px; justify-self: start; }
+.lbl-note { text-transform: none; letter-spacing: 0; color: var(--text-muted); opacity: .8; margin-left: 6px; }
+.matcount { display: inline-flex; align-items: center; gap: 3px; color: var(--color-accent); }
+
+@media (max-width: 560px) {
+  .matrow, .matrow.fixed { grid-template-columns: minmax(0, 1fr) 38px; }
+  .matrow .m-label, .matrow .m-fixed { grid-column: 1 / -1; }
+}
+
 /* ---------- panel de recursos ---------- */
 .resitem {
   display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--bg-base);
@@ -328,6 +375,10 @@ dialog h2 { margin: 0; font: 700 26px/1.1 var(--font-display); color: var(--text
     <input type="hidden" id="t_id">
     <div class="f"><label for="t_titulo">Tarea</label><input id="t_titulo" required maxlength="120" placeholder="Ej. Post de call for speakers"></div>
     <div class="f"><label for="t_descripcion">Descripción</label><textarea id="t_descripcion" rows="2" placeholder="Qué se entrega, formatos, medidas…"></textarea></div>
+    <div class="matview" id="matView" hidden>
+      <span class="matview-title">Para hacer esta tarea</span>
+      <div class="matlinks" id="matLinks"></div>
+    </div>
     <div class="grid2">
       <div class="f"><label for="t_responsable">Responsable</label><select id="t_responsable"></select></div>
       <div class="f"><label for="t_estado">Estado</label><select id="t_estado"><option>To Do</option><option>Doing</option><option>Done</option></select></div>
@@ -335,10 +386,18 @@ dialog h2 { margin: 0; font: 700 26px/1.1 var(--font-display); color: var(--text
       <div class="f"><label for="t_fecha">Fecha límite</label><input id="t_fecha" type="date"></div>
     </div>
     <div class="f"><label for="t_notas">Notas</label><textarea id="t_notas" rows="3" placeholder="Ideas, feedback, pendientes…"></textarea></div>
-    <div class="grid2">
-      <div class="f"><label for="t_plantilla">Plantilla para empezar</label><input id="t_plantilla" type="url" placeholder="Canva ya con el tamaño correcto…"></div>
-      <div class="f"><label for="t_enlace">Enlace al diseño / avance</label><input id="t_enlace" type="url" placeholder="https://www.canva.com/design/…"></div>
-    </div>
+    <fieldset class="mats">
+      <legend>Materiales de la tarea</legend>
+      <p class="mats-hint">Todo lo que alguien necesita para hacerla: plantilla, especificaciones, carpetas con elementos.</p>
+      <div class="matrow fixed">
+        <label for="t_plantilla" class="m-fixed">Plantilla para empezar</label>
+        <input id="t_plantilla" class="m-url" type="url" placeholder="Canva ya con la medida correcta">
+      </div>
+      <div id="matList" class="matlist"></div>
+      <button class="btn ghost-accent sm" id="btnAddMat" type="button">+ Agregar material</button>
+    </fieldset>
+    <div class="f"><label for="t_enlace">Enlace al diseño / avance <span class="lbl-note">lo pega quien hace la tarea</span></label><input id="t_enlace" type="url" placeholder="https://www.canva.com/design/…"></div>
+    <input type="hidden" id="t_materiales">
     <div class="stamp" id="t_stamp"></div>
     <div class="dlg-actions">
       <button class="btn danger" id="btnDelete" type="button">Borrar</button>
@@ -395,7 +454,7 @@ dialog h2 { margin: 0; font: 700 26px/1.1 var(--font-display); color: var(--text
       ["CR-006","Propuestas de swag","Playeras (voluntarios, organizadores y general), plumas y tote bags","Sin asignar","To Do","Urgente"]
     ].map(function (r) {
       return { id: r[0], titulo: r[1], descripcion: r[2], responsable: r[3], estado: r[4], prioridad: r[5],
-               fecha: "", notas: "", enlace: "", plantilla: "", creado: s, actualizado: s, actualizadoPor: "Irvin" };
+               fecha: "", notas: "", enlace: "", plantilla: "", materiales: "", creado: s, actualizado: s, actualizadoPor: "Irvin" };
     });
     var recursos = [
       { etiqueta: "Identidad gráfica (Canva)", enlace: "https://www.canva.com/design/DAHWXNICiKQ/EsrE2XvZOCf_kJAGxyh3jg/edit", notas: "Logos, tipografías, iconografía y elementos gráficos del evento" }
@@ -573,7 +632,8 @@ dialog h2 { margin: 0; font: 700 26px/1.1 var(--font-display); color: var(--text
     if (idx > 0) moves += '<button type="button" data-move="' + ESTADOS[idx - 1] + '">← ' + ESTADOS[idx - 1] + "</button>";
     if (idx < 2) moves += '<button type="button" data-move="' + ESTADOS[idx + 1] + '">' + ESTADOS[idx + 1] + " →</button>";
     var notes = t.notas ? '<span title="Tiene notas"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 2.5h10v8l-3 3H3z"/><path d="M5.5 6h5M5.5 8.5h3"/></svg></span>' : "";
-    var tmpl = t.plantilla ? '<span title="Tiene plantilla para empezar"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2.5" y="2.5" width="11" height="11" rx="1.5"/><path d="M2.5 6.5h11"/></svg></span>' : "";
+    var nMats = parseMats(t.materiales).length + (isUrl(t.plantilla) ? 1 : 0);
+    var tmpl = nMats ? '<span class="matcount" title="' + nMats + (nMats === 1 ? " material" : " materiales") + ' para hacer la tarea"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10.5 4.5 5.8 9.2a1.5 1.5 0 0 0 2.1 2.1l5-5a3 3 0 0 0-4.2-4.2l-5 5a4.5 4.5 0 0 0 6.4 6.4l4.2-4.2"/></svg>' + nMats + "</span>" : "";
     var link = t.enlace ? '<span title="Tiene enlace al diseño"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 9a3 3 0 0 0 4.2 0l2-2a3 3 0 0 0-4.2-4.2l-.8.8"/><path d="M9 7a3 3 0 0 0-4.2 0l-2 2a3 3 0 0 0 4.2 4.2l.8-.8"/></svg></span>' : "";
     return '<article class="card prio-' + esc(t.prioridad) + '" draggable="true" tabindex="0" data-id="' + esc(t.id) + '" data-estado="' + esc(t.estado) + '" aria-label="' + esc(t.titulo) + '">' +
       '<div class="card-top"><span class="tid">' + esc(t.id) + '</span><span class="pill ' + esc(t.prioridad) + '">' + esc(t.prioridad) + "</span></div>" +
@@ -612,28 +672,106 @@ dialog h2 { margin: 0; font: 700 26px/1.1 var(--font-display); color: var(--text
     run(api.moveTask(id, estado, who()), id + " → " + estado);
   }
 
+  /* ------------ materiales por tarea ------------ */
+  // En la hoja, la columna "Materiales" guarda una línea por link:  Nombre | https://…
+  // También acepta líneas escritas a mano como "Especificaciones: https://…" o solo el link.
+  function isUrl(s) { return /^https?:\/\/\S+$/i.test(String(s || "").trim()); }
+  function parseMats(text) {
+    return String(text || "").split(/\r?\n/).map(function (line) {
+      var m = line.match(/https?:\/\/\S+/i);
+      if (!m) return null;
+      var label = line.replace(m[0], "").replace(/[\s|:·–—-]+$/, "").replace(/^[\s|:·–—-]+/, "").trim();
+      return { label: label, url: m[0] };
+    }).filter(Boolean);
+  }
+  function serializeMats(list) {
+    return list.filter(function (m) { return isUrl(m.url); }).map(function (m) {
+      var label = String(m.label || "").replace(/\|/g, "/").replace(/\s+/g, " ").trim();
+      return (label ? label + " | " : "") + m.url.trim();
+    }).join("\n");
+  }
+  var KINDS = [
+    { re: /canva\.(com|link)/i, tag: "CV", name: "Canva", color: "#3DD6D0" },
+    { re: /docs\.google\.com\/document/i, tag: "DOC", name: "Google Doc", color: "#378ADD" },
+    { re: /docs\.google\.com\/spreadsheets/i, tag: "XLS", name: "Google Sheets", color: "#3DD6D0" },
+    { re: /docs\.google\.com\/presentation/i, tag: "PPT", name: "Google Slides", color: "#E8A33D" },
+    { re: /drive\.google\.com\/(drive\/)?(u\/\d+\/)?folders/i, tag: "DRV", name: "Carpeta de Drive", color: "#E8A33D" },
+    { re: /drive\.google\.com/i, tag: "DRV", name: "Archivo de Drive", color: "#E8A33D" },
+    { re: /figma\.com/i, tag: "FIG", name: "Figma", color: "#C143BC" },
+    { re: /\.pdf(\?|#|$)/i, tag: "PDF", name: "PDF", color: "#E24B4A" }
+  ];
+  function kindOf(url) {
+    for (var i = 0; i < KINDS.length; i++) if (KINDS[i].re.test(url)) return KINDS[i];
+    var host = ""; try { host = new URL(url).hostname.replace(/^www\./, ""); } catch (e) {}
+    return { tag: "WEB", name: host || "Enlace", color: "#B4B2A9" };
+  }
+  function matChip(label, url, extraClass) {
+    var k = kindOf(url);
+    return '<a class="mat ' + (extraClass || "") + '" href="' + esc(url) + '" target="_blank" rel="noopener">' +
+      '<span class="kind" style="--k:' + k.color + '">' + k.tag + '</span>' +
+      '<span class="txt"><b>' + esc(label || k.name) + '</b><small>' + esc(k.name) + '</small></span></a>';
+  }
+  function currentMats() {
+    return Array.prototype.map.call($("matList").querySelectorAll(".matrow"), function (row) {
+      return { label: row.querySelector(".m-label").value, url: row.querySelector(".m-url").value.trim() };
+    });
+  }
+  function renderMatView() {
+    var html = "";
+    var p = $("t_plantilla").value.trim();
+    if (isUrl(p)) html += matChip("Plantilla para empezar", p);
+    currentMats().forEach(function (m) { if (isUrl(m.url)) html += matChip(m.label, m.url); });
+    var e = $("t_enlace").value.trim();
+    if (isUrl(e)) html += matChip("Diseño / avance", e, "design");
+    $("matLinks").innerHTML = html;
+    $("matView").hidden = !html;
+  }
+  function addMatRow(label, url, focus) {
+    var row = document.createElement("div");
+    row.className = "matrow";
+    var n = $("matList").children.length + 1;
+    row.innerHTML =
+      '<input class="m-label" id="m_label_' + n + '" aria-label="Nombre del material" placeholder="Ej. Especificaciones" maxlength="60">' +
+      '<input class="m-url" id="m_url_' + n + '" type="url" aria-label="Link del material" placeholder="https://drive.google.com/…">' +
+      '<button class="m-del" type="button" aria-label="Quitar material" title="Quitar">×</button>';
+    row.querySelector(".m-label").value = label || "";
+    row.querySelector(".m-url").value = url || "";
+    $("matList").appendChild(row);
+    if (focus) row.querySelector(".m-label").focus();
+  }
+  $("btnAddMat").addEventListener("click", function () { addMatRow("", "", true); });
+  $("matList").addEventListener("click", function (ev) {
+    var del = ev.target.closest(".m-del");
+    if (del) { del.closest(".matrow").remove(); renderMatView(); }
+  });
+  $("frm").addEventListener("input", function (ev) {
+    if (ev.target.closest(".mats") || ev.target.id === "t_enlace") renderMatView();
+  });
+
   var dlg = $("dlg");
   var dlgRecursos = $("dlgRecursos");
-  var FIELDS = ["titulo", "descripcion", "responsable", "estado", "prioridad", "fecha", "notas", "enlace", "plantilla"];
+  var FIELDS = ["titulo", "descripcion", "responsable", "estado", "prioridad", "fecha", "notas", "enlace", "plantilla", "materiales"];
   function openForm(task) {
     var t = task || { estado: "To Do", prioridad: "Normal", responsable: state.person !== "Todos" ? state.person : "Sin asignar" };
     $("dlgTitle").textContent = task ? "Editar " + task.id : "Nueva tarea";
     $("t_id").value = task ? task.id : "";
     FIELDS.forEach(function (f) { $("t_" + f).value = t[f] || ""; });
     if (!$("t_responsable").value) $("t_responsable").selectedIndex = 0;
-    var stampLinks = "";
-    if (task) {
-      if (task.plantilla && /^https?:\/\//.test(task.plantilla)) stampLinks += ' · <a class="linkout" href="' + esc(task.plantilla) + '" target="_blank" rel="noopener">Abrir plantilla</a>';
-      if (task.enlace && /^https?:\/\//.test(task.enlace)) stampLinks += ' · <a class="linkout" href="' + esc(task.enlace) + '" target="_blank" rel="noopener">Abrir diseño</a>';
-    }
-    $("t_stamp").innerHTML = task ? "Última edición: " + esc(task.actualizado) + " por " + esc(task.actualizadoPor) + stampLinks : "";
+    $("matList").innerHTML = "";
+    parseMats(t.materiales).forEach(function (m) { addMatRow(m.label, m.url); });
+    renderMatView();
+    $("t_stamp").textContent = task ? "Última edición: " + (task.actualizado || "—") + " por " + (task.actualizadoPor || "—") : "";
     $("btnDelete").hidden = !task; disarm();
-    dlg.showModal(); $("t_titulo").focus();
+    dlg.showModal();
+    dlg.scrollTop = 0; if (!task) $("t_titulo").focus();
   }
   function disarm() { var b = $("btnDelete"); b.classList.remove("armed"); b.textContent = "Borrar"; }
 
   $("frm").addEventListener("submit", function (ev) {
     ev.preventDefault();
+    var bad = currentMats().filter(function (m) { return m.url && !isUrl(m.url); })[0];
+    if (bad) { toast("Revisa el link «" + bad.url.slice(0, 40) + "»: debe empezar con https://"); return; }
+    $("t_materiales").value = serializeMats(currentMats());
     var t = { id: $("t_id").value };
     FIELDS.forEach(function (f) { t[f] = $("t_" + f).value.trim(); });
     if (!t.titulo) { $("t_titulo").focus(); return; }

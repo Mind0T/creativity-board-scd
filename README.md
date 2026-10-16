@@ -70,8 +70,9 @@ Si algún día necesitas cambiar la clave: vuelve a correr `generarSecreto()` y 
 
 ## La hoja
 
-- **Tareas**: ID · Tarea · Descripción · Responsable · Estado · Prioridad · Fecha límite · Notas · Enlace · Creado · Actualizado · Actualizado por · Plantilla
+- **Tareas**: ID · Tarea · Descripción · Responsable · Estado · Prioridad · Fecha límite · Notas · Enlace · Creado · Actualizado · Actualizado por · Plantilla · Materiales
   - **Plantilla**: archivo base para empezar (ej. un Canva ya con el tamaño de la araña o del gafete).
+  - **Materiales**: un link por línea, con nombre opcional: `Especificaciones | https://docs.google.com/…`. También acepta `Nombre: https://…` o el link solo. En el tablero aparecen como botones en "Para hacer esta tarea", con el tipo detectado (Canva, Google Doc, carpeta de Drive, PDF…).
   - **Enlace**: el diseño o avance de quien hace la tarea.
 - **Equipo**: Nombre · Color (hex). Una persona nueva aquí aparece en el tablero.
 - **Recursos**: Etiqueta · Enlace · Notas. Aparecen en el botón **Recursos** del tablero (identidad gráfica, Drive de elementos, etc.). Las filas sin enlace no se muestran.

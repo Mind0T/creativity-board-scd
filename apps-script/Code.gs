@@ -23,11 +23,12 @@ const TZ = 'America/Mexico_City';
 // no por su posición: puedes reordenarlas o agregar columnas tuyas sin romper nada.
 // "enlace"    = link al avance/diseño (lo pega quien hace la tarea)
 // "plantilla" = link al archivo base para empezar (ya con el tamaño correcto)
+// "materiales"= un link por línea, "Nombre | https://…" (Docs, Drive, PDFs, etc.)
 const HEADERS = {
   id: 'ID', titulo: 'Tarea', descripcion: 'Descripción', responsable: 'Responsable',
   estado: 'Estado', prioridad: 'Prioridad', fecha: 'Fecha límite', notas: 'Notas',
-  enlace: 'Enlace', plantilla: 'Plantilla', creado: 'Creado', actualizado: 'Actualizado',
-  actualizadoPor: 'Actualizado por'
+  enlace: 'Enlace', plantilla: 'Plantilla', materiales: 'Materiales', creado: 'Creado',
+  actualizado: 'Actualizado', actualizadoPor: 'Actualizado por'
 };
 const KEYS = Object.keys(HEADERS);
 const REQUIRED = ['id', 'titulo', 'estado'];
@@ -108,6 +109,7 @@ function saveTask_(task, user) {
       notas: clean_(task.notas).slice(0, 5000),
       enlace: clean_(task.enlace).slice(0, 1000),
       plantilla: clean_(task.plantilla).slice(0, 1000),
+      materiales: clean_(cleanMats_(task.materiales)),
       actualizado: now_(),
       actualizadoPor: clean_(user).slice(0, 60) || 'Anónimo'
     };
@@ -122,6 +124,11 @@ function saveTask_(task, user) {
       Object.keys(values).forEach(k => { if (cols[k]) full[cols[k] - 1] = values[k]; });
       sh.appendRow(full);
     } else {
+      // Al editar, solo se tocan los campos que vienen en la petición:
+      // una versión vieja del tablero (en caché) no borra columnas que no conoce.
+      Object.keys(values).forEach(k => {
+        if (k !== 'actualizado' && k !== 'actualizadoPor' && task[k] === undefined) delete values[k];
+      });
       writeRow_(sh, cols, row, values);
     }
     return getBoard_();
@@ -229,6 +236,13 @@ function fmt_(key, v) {
 function parseDate_(s) {
   const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
   return m ? new Date(+m[1], +m[2] - 1, +m[3]) : '';
+}
+
+/** Deja solo líneas que traen un link http(s); máximo 30 líneas. */
+function cleanMats_(s) {
+  return String(s || '').split(/\r?\n/)
+    .map(l => l.trim()).filter(l => /https?:\/\/\S+/i.test(l))
+    .slice(0, 30).map(l => l.slice(0, 500)).join('\n');
 }
 
 /** Evita que un texto se interprete como fórmula en la hoja. */
