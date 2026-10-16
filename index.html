@@ -247,8 +247,38 @@ dialog h2 { margin: 0; font: 700 26px/1.1 var(--font-display); color: var(--text
 .mat .txt small { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); }
 .mat.design { border-style: dashed; }
 
-fieldset.mats { margin: 0; padding: 14px; display: grid; gap: 10px; border: 1px solid var(--border-default); border-radius: var(--radius-md); }
-fieldset.mats legend { padding: 0 6px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-muted); }
+/* enlace de mi diseño: el campo principal de quien hace la tarea */
+.mydesign {
+  display: grid; gap: 6px; padding: 14px; border-radius: var(--radius-md);
+  background: rgba(193,67,188,.08); border: 1px solid rgba(193,67,188,.45);
+}
+.mydesign label { font: 700 18px/1.2 var(--font-display); color: var(--text-primary); }
+.mydesign-hint { margin: 0; font-size: 12px; color: var(--text-secondary); }
+.mydesign input {
+  width: 100%; min-height: 46px; margin-top: 4px; border: 1px solid var(--color-accent); border-radius: var(--radius-sm);
+  padding: 10px 12px; background: var(--bg-base); color: var(--text-primary); font-size: 14px; transition: var(--transition-base);
+}
+.mydesign input:focus { outline: none; box-shadow: var(--glow-accent); }
+.mydesign input::placeholder { color: var(--text-muted); }
+
+/* materiales: plegable */
+details.mats { border: 1px solid var(--border-default); border-radius: var(--radius-md); background: rgba(14,14,26,.35); }
+details.mats > summary {
+  list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 14px; border-radius: var(--radius-md); transition: var(--transition-base);
+}
+details.mats > summary::-webkit-details-marker { display: none; }
+details.mats > summary::before {
+  content: ""; width: 9px; height: 9px; flex: none; margin-right: 2px;
+  border-right: 2px solid var(--color-accent); border-bottom: 2px solid var(--color-accent);
+  transform: rotate(-45deg); transition: transform 200ms ease-out;
+}
+details.mats[open] > summary::before { transform: rotate(45deg); }
+details.mats > summary:hover { background: rgba(97,59,184,.12); }
+details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.mats-title { font: 600 16px/1.2 var(--font-display); color: var(--text-primary); }
+.mats-count { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); margin-left: auto; }
+.mats-body { display: grid; gap: 10px; padding: 0 14px 14px; }
 .mats-hint { margin: 0; font-size: 12px; color: var(--text-muted); }
 .matlist { display: grid; gap: 8px; }
 .matlist:empty { display: none; }
@@ -409,18 +439,26 @@ fieldset.mats legend { padding: 0 6px; font-size: 11px; letter-spacing: .12em; t
       <div class="f"><label for="t_fecha">Fecha límite</label><input id="t_fecha" type="date"></div>
     </div>
     <div class="f"><label for="t_notas">Notas</label><textarea id="t_notas" rows="3" placeholder="Ideas, feedback, pendientes…"></textarea></div>
-    <fieldset class="mats">
-      <legend>Materiales de la tarea</legend>
-      <p class="mats-hint">Todo lo que alguien necesita para hacerla: plantilla, especificaciones, carpetas con elementos.</p>
-      <div class="matrow fixed">
-        <label for="t_plantilla" class="m-fixed">Plantilla para empezar</label>
-        <input id="t_plantilla" class="m-url" type="url" placeholder="Canva ya con la medida correcta">
-        <div class="m-actions" id="plantillaActions"></div>
+    <div class="mydesign">
+      <label for="t_enlace">Enlace de mi diseño / propuesta</label>
+      <p class="mydesign-hint">Pega aquí el link de tu Canva cuando empieces a diseñar, para que el equipo vea tu avance.</p>
+      <input id="t_enlace" type="url" placeholder="https://www.canva.com/design/…">
+    </div>
+    <details class="mats" id="matsBox">
+      <summary>
+        <span class="mats-title">Agregar materiales para la tarea</span>
+        <span class="mats-count" id="matsCount"></span>
+      </summary>
+      <div class="mats-body">
+        <p class="mats-hint">Plantilla, especificaciones, carpetas con elementos. Lo que cargues aquí aparece arriba, en «Para hacer esta tarea».</p>
+        <div class="matrow fixed">
+          <label for="t_plantilla" class="m-fixed">Plantilla para empezar</label>
+          <input id="t_plantilla" class="m-url" type="url" placeholder="Canva ya con la medida correcta">
+        </div>
+        <div id="matList" class="matlist"></div>
+        <button class="btn ghost-accent sm" id="btnAddMat" type="button">+ Agregar material</button>
       </div>
-      <div id="matList" class="matlist"></div>
-      <button class="btn ghost-accent sm" id="btnAddMat" type="button">+ Agregar material</button>
-    </fieldset>
-    <div class="f"><label for="t_enlace">Enlace al diseño / avance <span class="lbl-note">lo pega quien hace la tarea</span></label><input id="t_enlace" type="url" placeholder="https://www.canva.com/design/…"><div class="m-actions" id="enlaceActions"></div></div>
+    </details>
     <input type="hidden" id="t_materiales">
     <div class="stamp" id="t_stamp"></div>
     <div class="dlg-actions">
@@ -788,18 +826,17 @@ fieldset.mats legend { padding: 0 6px; font-size: 11px; letter-spacing: .12em; t
   function renderMatView() {
     var html = "";
     var p = $("t_plantilla").value.trim();
-    if (isUrl(p)) html += matChip("Plantilla para empezar", p, "", "Plantilla inicial");
-    setActions($("plantillaActions"), "Plantilla inicial", p);
+    var count = 0;
+    if (isUrl(p)) { html += matChip("Plantilla para empezar", p, "", "Plantilla inicial"); count++; }
     Array.prototype.forEach.call($("matList").querySelectorAll(".matrow"), function (row) {
       var label = row.querySelector(".m-label").value, url = row.querySelector(".m-url").value.trim();
-      if (isUrl(url)) html += matChip(label, url);
-      setActions(row.querySelector(".m-actions"), label, url);
+      if (isUrl(url)) { html += matChip(label, url); count++; }
     });
     var e = $("t_enlace").value.trim();
-    if (isUrl(e)) html += matChip("Diseño / avance", e, "design", "Diseño / avance");
-    setActions($("enlaceActions"), "Diseño / avance", e);
+    if (isUrl(e)) html += matChip("Diseño / propuesta", e, "design", "Diseño / propuesta");
     $("matLinks").innerHTML = html;
     $("matView").hidden = !html;
+    $("matsCount").textContent = count ? count + (count === 1 ? " cargado" : " cargados") : "ninguno todavía";
   }
   function addMatRow(label, url, focus) {
     var row = document.createElement("div");
@@ -808,8 +845,7 @@ fieldset.mats legend { padding: 0 6px; font-size: 11px; letter-spacing: .12em; t
     row.innerHTML =
       '<input class="m-label" id="m_label_' + n + '" aria-label="Nombre del material" placeholder="Ej. Especificaciones" maxlength="60">' +
       '<input class="m-url" id="m_url_' + n + '" type="url" aria-label="Link del material" placeholder="https://drive.google.com/…">' +
-      '<button class="m-del" type="button" aria-label="Quitar material" title="Quitar">×</button>' +
-      '<div class="m-actions"></div>';
+      '<button class="m-del" type="button" aria-label="Quitar material" title="Quitar">×</button>';
     row.querySelector(".m-label").value = label || "";
     row.querySelector(".m-url").value = url || "";
     $("matList").appendChild(row);
@@ -823,6 +859,11 @@ fieldset.mats legend { padding: 0 6px; font-size: 11px; letter-spacing: .12em; t
   $("frm").addEventListener("input", function (ev) {
     if (ev.target.closest(".mats") || ev.target.id === "t_enlace") renderMatView();
   });
+  // Si un link mal escrito está dentro de la sección plegada, ábrela para que se vea el aviso del navegador.
+  $("frm").addEventListener("invalid", function (ev) {
+    var box = ev.target.closest && ev.target.closest("details");
+    if (box && !box.open) box.open = true;
+  }, true);
 
   var dlg = $("dlg");
   var dlgRecursos = $("dlgRecursos");
@@ -834,6 +875,7 @@ fieldset.mats legend { padding: 0 6px; font-size: 11px; letter-spacing: .12em; t
     FIELDS.forEach(function (f) { $("t_" + f).value = t[f] || ""; });
     if (!$("t_responsable").value) $("t_responsable").selectedIndex = 0;
     $("matList").innerHTML = "";
+    $("matsBox").open = false;
     // Tarea nueva: trae por default los recursos generales (pestaña "Recursos" de la hoja).
     var mats = task ? parseMats(t.materiales)
       : state.recursos.filter(function (r) { return isUrl(r.enlace); }).map(function (r) { return { label: r.etiqueta, url: r.enlace }; });
