@@ -1,0 +1,11 @@
+{
+  "name": "creativity-board-scd",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tablero kanban del área de Creativity del AWS Student Community Day CDMX 2026, conectado a Google Sheets.",
+  "type": "module",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "dev": "vercel dev"
+  }
+}
