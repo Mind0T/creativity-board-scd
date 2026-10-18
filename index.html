@@ -287,6 +287,9 @@ dialog h2 { margin: 0; font: 700 26px/1.1 var(--font-display); color: var(--text
   background: var(--bg-surface); border: 1px solid #25D366; border-radius: var(--radius-md);
   color: var(--text-primary); font-size: 13px; box-shadow: 0 8px 32px rgba(0,0,0,.5);
 }
+.notice-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.notice-links .qa.sent { opacity: .55; }
+.qa-done { display: contents; }
 .notice-x {
   position: absolute; top: 6px; right: 6px; width: 30px; height: 30px; border: 0; background: transparent;
   color: var(--text-muted); font-size: 18px; cursor: pointer; border-radius: var(--radius-sm);
@@ -493,6 +496,7 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
     </div>
     <div class="quick" id="quickActions">
       <a class="qa wa" id="qaWhats" href="#" target="_blank" rel="noopener" hidden></a>
+      <span class="qa-done" id="qaDone"></span>
       <a class="qa" id="qaGcal" href="#" target="_blank" rel="noopener" hidden></a>
       <button class="qa" id="qaIcs" type="button" hidden></button>
       <span class="qa-hint" id="qaHint"></span>
@@ -533,7 +537,7 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 <div class="notice" id="notice" role="status" aria-live="polite" hidden>
   <span id="noticeText"></span>
-  <a class="qa wa" id="noticeLink" href="#" target="_blank" rel="noopener"></a>
+  <span class="notice-links" id="noticeLinks"></span>
   <button class="notice-x" id="noticeClose" type="button" aria-label="Cerrar aviso">×</button>
 </div>
 
@@ -616,7 +620,7 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
   };
 
   /* ------------ estado ------------ */
-  var state = { tasks: [], team: [], recursos: [], person: "Todos", prio: "Todas", q: "", me: "", busy: 0, dragging: false };
+  var state = { tasks: [], team: [], recursos: [], avisos: [], person: "Todos", prio: "Todas", q: "", me: "", busy: 0, dragging: false };
   var $ = function (id) { return document.getElementById(id); };
 
   function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
@@ -652,6 +656,7 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
     state.tasks = res.tasks || [];
     state.team = res.team || [];
     state.recursos = res.recursos || [];
+    state.avisos = res.avisos || [];
     setSync("", (MODE === "live" ? "Sincronizado con la hoja · " : "Modo demo · ") + (res.serverTime || "").slice(11));
     render();
   }
@@ -798,8 +803,11 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
   function move(id, estado) {
     var t = state.tasks.filter(function (x) { return x.id === id; })[0];
     if (!t || t.estado === estado) return;
+    var wasDone = t.estado === "Done";
     t.estado = estado; render(); // optimista
-    run(api.moveTask(id, estado, who()), id + " → " + estado);
+    run(api.moveTask(id, estado, who()), id + " → " + estado).then(function (ok) {
+      if (ok && estado === "Done" && !wasDone) notifyDone(id);
+    });
   }
 
   /* ------------ materiales por tarea ------------ */
@@ -1004,6 +1012,9 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
     aw.hidden = !wa;
     if (wa) { aw.href = wa; aw.innerHTML = ICON_WA + "<span>Avisar a " + esc(who) + " por WhatsApp</span>"; }
     else if (who) hints.push("Para avisar a " + who + " por WhatsApp, agrega su número en la pestaña Equipo.");
+    $("qaDone").innerHTML = t.estado === "Done" ? doneLinks(t).map(function (l) {
+      return '<a class="qa wa" href="' + esc(l.href) + '" target="_blank" rel="noopener">' + ICON_WA + "<span>" + esc(l.text.replace(" por WhatsApp", "")) + " que está terminada</span></a>";
+    }).join("") : "";
     var g = gcalLink(t);
     $("qaGcal").hidden = !g; $("qaIcs").hidden = !g;
     if (g) {
@@ -1026,17 +1037,55 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
   });
 
   /* ------------ aviso después de asignar ------------ */
-  function showNotice(text, link, linkText) {
+  /** links: [{ href, text }] — cada uno abre WhatsApp en pestaña nueva. */
+  function showNotice(text, links) {
     $("noticeText").textContent = text;
-    var a = $("noticeLink");
-    a.hidden = !link;
-    if (link) { a.href = link; a.innerHTML = ICON_WA + "<span>" + esc(linkText) + "</span>"; }
+    $("noticeLinks").innerHTML = (links || []).map(function (l) {
+      return '<a class="qa wa" href="' + esc(l.href) + '" target="_blank" rel="noopener">' + ICON_WA + "<span>" + esc(l.text) + "</span></a>";
+    }).join("");
     $("notice").hidden = false;
-    clearTimeout(showNotice._t); showNotice._t = setTimeout(hideNotice, 20000);
+    clearTimeout(showNotice._t); showNotice._t = setTimeout(hideNotice, 25000);
   }
   function hideNotice() { $("notice").hidden = true; }
   $("noticeClose").addEventListener("click", hideNotice);
-  $("noticeLink").addEventListener("click", function () { setTimeout(hideNotice, 300); });
+  $("noticeLinks").addEventListener("click", function (ev) {
+    var a = ev.target.closest("a");
+    if (a) { a.classList.add("sent"); if ($("noticeLinks").querySelectorAll("a:not(.sent)").length === 0) setTimeout(hideNotice, 300); }
+  });
+
+  /* ------------ aviso a la capitana (pestaña "Avisos") al terminar una tarea ------------ */
+  function firstName(n) { return String(n || "").trim().split(/\s+/)[0]; }
+  function normPhone(p) { var d = String(p || "").replace(/\D/g, ""); if (d.length === 10) d = "52" + d; return d.length >= 11 ? d : ""; }
+  function doneTargets() {
+    return state.avisos.filter(function (a) { return /termin/i.test(a.cuando || "") && normPhone(a.whatsapp); });
+  }
+  function doneMessage(t, target) {
+    var lines = [];
+    lines.push("Hola " + firstName(target.nombre) + ", se terminó una tarea de Creativity · AWS Student Community Day CDMX 2026.");
+    lines.push("");
+    lines.push("*" + t.titulo + "*" + (t.id ? " (" + t.id + ")" : ""));
+    lines.push("Hecha por: " + (personOf(t.responsable) || "sin responsable asignado"));
+    if (t.fecha) lines.push("Fecha límite: " + fechaLarga(t.fecha));
+    lines.push("");
+    lines.push(isUrl(t.enlace) ? "Diseño / propuesta: " + t.enlace : "Todavía no tiene link de diseño en el tablero.");
+    lines.push("");
+    lines.push("Revísala en el tablero:");
+    lines.push(taskUrl(t.id));
+    return lines.join("\n");
+  }
+  function doneLinks(t) {
+    return doneTargets().map(function (a) {
+      return { href: "https://wa.me/" + normPhone(a.whatsapp) + "?text=" + encodeURIComponent(doneMessage(t, a)),
+               text: "Avisar a " + firstName(a.nombre) + " por WhatsApp" };
+    });
+  }
+  function notifyDone(id, fallback) {
+    var t = state.tasks.filter(function (x) { return x.id === id; })[0] || fallback;
+    if (!t) return;
+    var links = doneLinks(t);
+    if (links.length) showNotice("«" + t.titulo + "» quedó terminada.", links);
+    else showNotice("«" + t.titulo + "» quedó terminada. Agrega el WhatsApp de la capitana en la pestaña Avisos para poder avisarle desde aquí.");
+  }
   function addMatRow(label, url, focus) {
     var row = document.createElement("div");
     row.className = "matrow";
@@ -1083,6 +1132,7 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
       : state.recursos.filter(function (r) { return isUrl(r.enlace); }).map(function (r) { return { label: r.etiqueta, url: r.enlace }; });
     mats.forEach(function (m) { addMatRow(m.label, m.url); });
     openForm.prevResp = task ? (task.responsable || "") : "";
+    openForm.prevEstado = task ? (task.estado || "") : "";
     renderMatView();
     renderQuick();
     $("t_stamp").textContent = task ? "Última edición: " + (task.actualizado || "—") + " por " + (task.actualizadoPor || "—") : "";
@@ -1116,14 +1166,17 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
     dlg.close();
     var newPerson = personOf(t.responsable);
     var assigned = newPerson && newPerson !== openForm.prevResp;
+    var finished = t.estado === "Done" && openForm.prevEstado !== "Done";
     var beforeIds = state.tasks.map(function (x) { return x.id; });
     run(api.saveTask(t, who()), t.id ? "Guardado " + t.id : "Tarea creada").then(function (ok) {
-      if (!ok || !assigned) return;
+      if (!ok) return;
+      if (finished) { notifyDone(t.id, t); return; }
+      if (!assigned) return;
       // Busca la tarea ya guardada (si es nueva, toma el ID que asignó la hoja) para que el link del mensaje sea el correcto.
       var saved = t.id ? state.tasks.filter(function (x) { return x.id === t.id; })[0]
         : state.tasks.filter(function (x) { return beforeIds.indexOf(x.id) === -1 && x.titulo === t.titulo; })[0];
       var link = waLink(saved || t);
-      if (link) showNotice("Asignaste «" + t.titulo + "» a " + newPerson + ".", link, "Avisarle por WhatsApp");
+      if (link) showNotice("Asignaste «" + t.titulo + "» a " + newPerson + ".", [{ href: link, text: "Avisarle por WhatsApp" }]);
       else showNotice("Asignaste «" + t.titulo + "» a " + newPerson + ". Agrega su WhatsApp en la pestaña Equipo para poder avisarle desde aquí.");
     });
   });

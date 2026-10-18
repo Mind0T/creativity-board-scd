@@ -17,6 +17,7 @@
 const SHEET_TAREAS = 'Tareas';
 const SHEET_EQUIPO = 'Equipo';
 const SHEET_RECURSOS = 'Recursos';
+const SHEET_AVISOS = 'Avisos';
 const TZ = 'America/Mexico_City';
 
 // Las columnas de "Tareas" se ubican por el TEXTO del encabezado (fila 1),
@@ -91,7 +92,7 @@ function getBoard_() {
       tasks.push(t);
     });
   }
-  return { ok: true, tasks: tasks, team: getTeam_(), recursos: getRecursos_(), estados: ESTADOS,
+  return { ok: true, tasks: tasks, team: getTeam_(), recursos: getRecursos_(), avisos: getAvisos_(), estados: ESTADOS,
            prioridades: PRIORIDADES, serverTime: now_() };
 }
 
@@ -169,6 +170,20 @@ function getTeam_() {
       nombre: String(r[0]).trim(),
       color: String(r[1] || '#73726C').trim(),
       whatsapp: String(r[2] || '').replace(/\D/g, '').slice(0, 15)
+    }));
+}
+
+/** A quién avisar y cuándo (pestaña "Avisos": Nombre · WhatsApp · Cuándo · Rol). Opcional. */
+function getAvisos_() {
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_AVISOS);
+  if (!sh || sh.getLastRow() < 2) return [];
+  return sh.getRange(2, 1, sh.getLastRow() - 1, 4).getValues()
+    .filter(r => String(r[0]).trim() && String(r[1]).trim())
+    .map(r => ({
+      nombre: String(r[0]).trim(),
+      whatsapp: String(r[1]).replace(/\D/g, '').slice(0, 15),
+      cuando: String(r[2] || 'Al terminar').trim(),
+      rol: String(r[3] || '').trim()
     }));
 }
 

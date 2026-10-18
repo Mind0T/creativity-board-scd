@@ -76,6 +76,7 @@ Si algún día necesitas cambiar la clave: vuelve a correr `generarSecreto()` y 
   - **Enlace**: el diseño o avance de quien hace la tarea.
 - **Equipo**: Nombre · Color (hex) · WhatsApp (10 dígitos). Una persona nueva aquí aparece en el tablero. El WhatsApp sirve para el botón «Avisar por WhatsApp»; los números viven solo en la hoja, nunca en este repo (es público).
 - **Recursos**: Etiqueta · Enlace · Notas. Aparecen en el botón **Recursos** del tablero (identidad gráfica, Drive de elementos, etc.) y **se precargan como materiales en cada tarea nueva**. Las filas sin enlace no se muestran.
+- **Avisos**: Nombre · WhatsApp · Cuándo · Rol. Personas a las que se les avisa «Al terminar» una tarea (ej. la capitana). No aparecen como responsables.
 - **Listas**: valores de los menús desplegables.
 
 El script ubica cada columna de **Tareas** por el texto de su encabezado, así que puedes reordenarlas o agregar columnas propias. Lo único que no debes cambiar es el texto de los encabezados.
@@ -85,6 +86,7 @@ Lo que se edite directo en la hoja aparece en el tablero en máximo 30 segundos.
 
 - **Link directo a una tarea:** `https://…vercel.app/#CR-003` abre esa tarea (es el link que va en el WhatsApp).
 - **Avisar por WhatsApp:** al asignar a alguien y guardar, aparece un aviso con el botón; también está junto a Responsable. Abre WhatsApp con el chat y el mensaje listos (tarea, prioridad, fecha, notas, materiales y link). El envío lo confirma quien asigna: mandar mensajes automáticos requiere la API de WhatsApp Business.
+- **Avisar a la capitana al terminar:** cuando una tarea pasa a Done (botón, arrastre o formulario) aparece un aviso para mandarle WhatsApp a quien esté en la pestaña Avisos con «Al terminar»: tarea, quién la hizo, link del diseño y link a la tarea.
 - **Agregar al calendario:** con fecha límite, botones para Google Calendar y para descargar un `.ics` (Apple, Outlook) con recordatorio un día antes.
 
 ## Desarrollo local
