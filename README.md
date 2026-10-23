@@ -70,7 +70,8 @@ Si algún día necesitas cambiar la clave: vuelve a correr `generarSecreto()` y 
 
 ## La hoja
 
-- **Tareas**: ID · Tarea · Descripción · Responsable · Estado · Prioridad · Fecha límite · Notas · Enlace · Creado · Actualizado · Actualizado por · Plantilla · Materiales
+- **Tareas**: ID · Tarea · Descripción · Responsable · Responsable 2 · Estado · Prioridad · Fecha límite · Notas · Enlace · Creado · Actualizado · Actualizado por · Plantilla · Materiales
+  - **Responsable / Responsable 2**: cada tarea puede tener hasta dos personas. «Responsable 2» es opcional; si la tarea es de una sola persona, se deja vacío.
   - **Plantilla**: archivo base para empezar (ej. un Canva ya con el tamaño de la araña o del gafete).
   - **Materiales**: un link por línea, con nombre opcional: `Especificaciones | https://docs.google.com/…`. También acepta `Nombre: https://…` o el link solo. En el tablero aparecen como botones en "Para hacer esta tarea", con el tipo detectado (Canva, Google Doc, carpeta de Drive, PDF…).
   - **Enlace**: el diseño o avance de quien hace la tarea.
