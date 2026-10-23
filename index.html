@@ -479,7 +479,8 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
       <div class="matlinks" id="matLinks"></div>
     </div>
     <div class="grid2">
-      <div class="f"><label for="t_responsable">Responsable</label><select id="t_responsable"></select></div>
+      <div class="f"><label for="t_responsable">Responsable 1</label><select id="t_responsable"></select></div>
+      <div class="f"><label for="t_responsable2">Responsable 2 <small style="opacity:.6">(opcional)</small></label><select id="t_responsable2"></select></div>
       <div class="f"><label for="t_estado">Estado</label><select id="t_estado"><option>To Do</option><option>Doing</option><option>Done</option></select></div>
       <div class="f"><label for="t_prioridad">Prioridad</label><select id="t_prioridad"><option>Urgente</option><option>Importante</option><option selected>Normal</option></select></div>
       <div class="f"><label for="t_fecha">Fecha límite</label><input id="t_fecha" type="date"></div>
@@ -695,7 +696,7 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
   function filtered() {
     var q = state.q.toLowerCase();
     return state.tasks.filter(function (t) {
-      if (state.person !== "Todos" && t.responsable !== state.person) return false;
+      if (state.person !== "Todos" && t.responsable !== state.person && t.responsable2 !== state.person) return false;
       if (state.prio !== "Todas" && t.prioridad !== state.prio) return false;
       if (q && (t.titulo + " " + t.descripcion + " " + t.notas + " " + t.id).toLowerCase().indexOf(q) === -1) return false;
       return true;
@@ -728,7 +729,7 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
   function renderChips() {
     var html = '<button type="button" class="chip all" data-person="Todos" aria-pressed="' + (state.person === "Todos") + '">Todos <small>' + state.tasks.length + "</small></button>";
     state.team.forEach(function (p) {
-      var mine = state.tasks.filter(function (t) { return t.responsable === p.nombre; });
+      var mine = state.tasks.filter(function (t) { return t.responsable === p.nombre || t.responsable2 === p.nombre; });
       var done = mine.filter(function (t) { return t.estado === "Done"; }).length;
       html += '<button type="button" class="chip" data-person="' + esc(p.nombre) + '" aria-pressed="' + (state.person === p.nombre) + '">' +
         '<span class="avatar" style="' + avatarStyle(p.nombre) + '">' + esc(initial(p.nombre)) + "</span>" +
@@ -737,10 +738,15 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
     $("chips").innerHTML = html;
 
     $("t_responsable").innerHTML = state.team.map(function (p) { return "<option>" + esc(p.nombre) + "</option>"; }).join("");
+    $("t_responsable2").innerHTML = '<option value="">— Sin segunda persona</option>' +
+      state.team.filter(function (p) { return p.nombre !== "Sin asignar"; }).map(function (p) { return "<option>" + esc(p.nombre) + "</option>"; }).join("");
   }
 
+  function whoChip(n) {
+    return '<span class="who"><span class="avatar" style="' + avatarStyle(n) + '">' + esc(initial(n)) + "</span>" + esc(n) + "</span>";
+  }
   function cardHTML(t) {
-    var none = !t.responsable || t.responsable === "Sin asignar";
+    var people = [t.responsable, t.responsable2].filter(function (n) { return n && n !== "Sin asignar"; });
     var due = "", d = parseYMD(t.fecha);
     if (d) {
       var left = Math.round((d - today0()) / 86400000), cls = "";
@@ -761,8 +767,7 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
       "<h3>" + esc(t.titulo) + "</h3>" +
       (t.descripcion ? '<p class="desc">' + esc(t.descripcion) + "</p>" : "") +
       '<div class="card-foot">' +
-        (none ? '<span class="who none">Sin asignar</span>'
-              : '<span class="who"><span class="avatar" style="' + avatarStyle(t.responsable) + '">' + esc(initial(t.responsable)) + "</span>" + esc(t.responsable) + "</span>") +
+        (people.length ? people.map(whoChip).join("") : '<span class="who none">Sin asignar</span>') +
         '<span class="meta">' + due + notes + tmpl + link + "</span>" +
       "</div>" +
       '<div class="moves">' + moves + "</div></article>";
@@ -933,9 +938,9 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
     var meses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
     return dias[d.getDay()] + " " + d.getDate() + " de " + meses[d.getMonth()];
   }
-  function waMessage(t) {
+  function waMessage(t, who) {
     var lines = [];
-    lines.push("Hola " + t.responsable + ", te asignaron una tarea en Creativity · AWS Student Community Day CDMX 2026.");
+    lines.push("Hola " + (who || t.responsable) + ", te asignaron una tarea en Creativity · AWS Student Community Day CDMX 2026.");
     lines.push("");
     lines.push("*" + t.titulo + "*" + (t.id ? " (" + t.id + ")" : ""));
     lines.push("Prioridad: " + (t.prioridad || "Normal"));
@@ -951,9 +956,9 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
     lines.push(taskUrl(t.id));
     return lines.join("\n");
   }
-  function waLink(t) {
-    var phone = phoneOf(t.responsable);
-    return phone ? "https://wa.me/" + phone + "?text=" + encodeURIComponent(waMessage(t)) : "";
+  function waLink(t, who) {
+    var phone = phoneOf(who || t.responsable);
+    return phone ? "https://wa.me/" + phone + "?text=" + encodeURIComponent(waMessage(t, who || t.responsable)) : "";
   }
   var ICON_WA = '<svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2.5 13.5l.9-2.6A5.6 5.6 0 1 1 5.6 13l-3.1.5z"/><path d="M6 6.2c.2 1.6 1.6 3 3.3 3.4l.8-.8 1.2.5-.3 1.1c-2.6.1-5.2-2.4-5.3-5l1.1-.3.5 1.2z" stroke-width="1.1"/></svg>';
   var ICON_CAL = '<svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.5" y="3.5" width="11" height="10" rx="1.5"/><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3"/></svg>';
@@ -1049,7 +1054,7 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
     lines.push("Hola " + firstName(target.nombre) + ", se terminó una tarea de Creativity · AWS Student Community Day CDMX 2026.");
     lines.push("");
     lines.push("*" + t.titulo + "*" + (t.id ? " (" + t.id + ")" : ""));
-    lines.push("Hecha por: " + (personOf(t.responsable) || "sin responsable asignado"));
+    lines.push("Hecha por: " + ([personOf(t.responsable), personOf(t.responsable2)].filter(Boolean).join(" y ") || "sin responsable asignado"));
     if (t.fecha) lines.push("Fecha límite: " + fechaLarga(t.fecha));
     lines.push("");
     lines.push(isUrl(t.enlace) ? "Diseño / propuesta: " + t.enlace : "Todavía no tiene link de diseño en el tablero.");
@@ -1103,7 +1108,7 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
 
   var dlg = $("dlg");
   var dlgRecursos = $("dlgRecursos");
-  var FIELDS = ["titulo", "descripcion", "responsable", "estado", "prioridad", "fecha", "notas", "enlace", "plantilla", "materiales"];
+  var FIELDS = ["titulo", "descripcion", "responsable", "responsable2", "estado", "prioridad", "fecha", "notas", "enlace", "plantilla", "materiales"];
   function openForm(task) {
     var t = task || { estado: "To Do", prioridad: "Normal", responsable: state.person !== "Todos" ? state.person : "Sin asignar" };
     $("dlgTitle").textContent = task ? "Editar " + task.id : "Nueva tarea";
@@ -1117,6 +1122,7 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
       : state.recursos.filter(function (r) { return isUrl(r.enlace); }).map(function (r) { return { label: r.etiqueta, url: r.enlace }; });
     mats.forEach(function (m) { addMatRow(m.label, m.url); });
     openForm.prevResp = task ? (task.responsable || "") : "";
+    openForm.prevResp2 = task ? (task.responsable2 || "") : "";
     openForm.prevEstado = task ? (task.estado || "") : "";
     renderMatView();
     renderQuick();
@@ -1149,20 +1155,23 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
     FIELDS.forEach(function (f) { t[f] = $("t_" + f).value.trim(); });
     if (!t.titulo) { $("t_titulo").focus(); return; }
     dlg.close();
-    var newPerson = personOf(t.responsable);
-    var assigned = newPerson && newPerson !== openForm.prevResp;
+    var prevPeople = [openForm.prevResp, openForm.prevResp2].map(personOf).filter(Boolean);
+    var nowPeople = [t.responsable, t.responsable2].map(personOf).filter(Boolean);
+    nowPeople = nowPeople.filter(function (n, i) { return nowPeople.indexOf(n) === i; });
+    var newlyAssigned = nowPeople.filter(function (n) { return prevPeople.indexOf(n) === -1; });
     var finished = t.estado === "Done" && openForm.prevEstado !== "Done";
     var beforeIds = state.tasks.map(function (x) { return x.id; });
     run(api.saveTask(t, who()), t.id ? "Guardado " + t.id : "Tarea creada").then(function (ok) {
       if (!ok) return;
       if (finished) { notifyDone(t.id, t); return; }
-      if (!assigned) return;
+      if (!newlyAssigned.length) return;
       // Busca la tarea ya guardada (si es nueva, toma el ID que asignó la hoja) para que el link del mensaje sea el correcto.
       var saved = t.id ? state.tasks.filter(function (x) { return x.id === t.id; })[0]
         : state.tasks.filter(function (x) { return beforeIds.indexOf(x.id) === -1 && x.titulo === t.titulo; })[0];
-      var link = waLink(saved || t);
-      if (link) showNotice("Asignaste «" + t.titulo + "» a " + newPerson + ".", [{ href: link, text: "Avisarle por WhatsApp" }]);
-      else showNotice("Asignaste «" + t.titulo + "» a " + newPerson + ". Agrega su WhatsApp en la pestaña Equipo para poder avisarle desde aquí.");
+      var links = newlyAssigned.map(function (n) { var l = waLink(saved || t, n); return l ? { href: l, text: "Avisar a " + n + " por WhatsApp" } : null; }).filter(Boolean);
+      var names = newlyAssigned.join(" y ");
+      if (links.length) showNotice("Asignaste «" + t.titulo + "» a " + names + ".", links);
+      else showNotice("Asignaste «" + t.titulo + "» a " + names + ". Agrega su WhatsApp en la pestaña Equipo para poder avisarles desde aquí.");
     });
   });
   $("btnCancel").addEventListener("click", function () { dlg.close(); });

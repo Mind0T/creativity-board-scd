@@ -27,6 +27,7 @@ const TZ = 'America/Mexico_City';
 // "materiales"= un link por línea, "Nombre | https://…" (Docs, Drive, PDFs, etc.)
 const HEADERS = {
   id: 'ID', titulo: 'Tarea', descripcion: 'Descripción', responsable: 'Responsable',
+  responsable2: 'Responsable 2',
   estado: 'Estado', prioridad: 'Prioridad', fecha: 'Fecha límite', notas: 'Notas',
   enlace: 'Enlace', plantilla: 'Plantilla', materiales: 'Materiales', creado: 'Creado',
   actualizado: 'Actualizado', actualizadoPor: 'Actualizado por'
@@ -104,6 +105,7 @@ function saveTask_(task, user) {
       titulo: clean_(task.titulo).slice(0, 200),
       descripcion: clean_(task.descripcion).slice(0, 2000),
       responsable: clean_(task.responsable) || 'Sin asignar',
+      responsable2: clean_(task.responsable2),
       estado: ESTADOS.indexOf(task.estado) > -1 ? task.estado : 'To Do',
       prioridad: PRIORIDADES.indexOf(task.prioridad) > -1 ? task.prioridad : 'Normal',
       fecha: parseDate_(task.fecha),
