@@ -1,7 +1,11 @@
-# Tablero Creativity · SCD CDMX 2026
+# Tablero Creativity · SCD CDMX + SBG IPN
 
-Kanban del área de Creativity del **AWS Student Community Day CDMX 2026**.
-Los datos viven en Google Sheets; el equipo trabaja desde una página en Vercel.
+Kanban del área de Creativity. La misma página sirve **dos tableros** y un botón en la barra alterna entre ellos:
+
+- **SCD CDMX** — AWS Student Community Day CDMX 2026 (branding morado/cian, cuenta regresiva al evento).
+- **SBG IPN** — AWS Student Builder Group IPN (branding morado/rosa, mascota del burrito, sin cuenta regresiva).
+
+Cada tablero tiene **su propia hoja de Google Sheets** (equipo, tareas, código del equipo). El branding cambia en el navegador; los datos los elige el backend según `?board=scd|sbg`. Los datos viven en Google Sheets; el equipo trabaja desde una página en Vercel.
 
 ```
 Navegador ──► Vercel /api/board ──► Apps Script (/exec) ──► Google Sheets
@@ -51,15 +55,31 @@ git push -u origin main
 2. Framework Preset: **Other**. No hace falta build command ni output directory.
 3. En **Environment Variables** agrega:
 
-| Variable          | Valor                                              |
-|-------------------|----------------------------------------------------|
-| `APPS_SCRIPT_URL` | La URL `/exec` del paso 1                          |
-| `API_SECRET`      | La clave que imprimió `generarSecreto()`           |
-| `TEAM_CODE`       | Un código para el equipo (ej. una palabra que solo ustedes sepan) |
+| Variable              | Valor                                              |
+|-----------------------|----------------------------------------------------|
+| `APPS_SCRIPT_URL`     | La URL `/exec` de la hoja del **SCD** (paso 1)     |
+| `API_SECRET`          | La clave que imprimió `generarSecreto()` en esa hoja |
+| `TEAM_CODE`           | Un código para el equipo del SCD                   |
+| `APPS_SCRIPT_URL_SBG` | La URL `/exec` de la hoja del **SBG** (ver abajo)  |
+| `API_SECRET_SBG`      | La clave `generarSecreto()` de la hoja del SBG     |
+| `TEAM_CODE_SBG`       | Un código para el equipo del SBG                   |
 
-4. **Deploy**. Comparte la URL `*.vercel.app` y el `TEAM_CODE` con Rafa, Xavi y Diana.
+4. **Deploy**. Comparte la URL `*.vercel.app` y el `TEAM_CODE` que corresponda con cada equipo.
 
 Cada `git push` a `main` vuelve a desplegar solo.
+
+> El tablero funciona aunque solo estén configuradas las variables del SCD: al cambiar a SBG sin sus variables, ese tablero avisará «Falta configurar APPS_SCRIPT_URL_SBG…» hasta que crees su hoja.
+
+## El segundo tablero (SBG IPN)
+
+El tablero del SBG corre con **el mismo código**, solo cambia su fuente de datos:
+
+1. Crea una **hoja nueva** de Google Sheets para el SBG (o duplica la del SCD y vacía las tareas). Deja las mismas pestañas/encabezados: `Tareas`, `Equipo`, `Recursos`, `Avisos`, `Listas`.
+2. En esa hoja: **Extensiones → Apps Script**, pega el mismo `apps-script/Code.gs`, corre `generarSecreto()` y copia su `API_SECRET`.
+3. **Implementar → Nueva implementación → Aplicación web** (Ejecutar como: Yo · Acceso: Cualquier persona). Copia la URL `/exec`.
+4. En Vercel pon esa URL, su clave y un código en `APPS_SCRIPT_URL_SBG`, `API_SECRET_SBG`, `TEAM_CODE_SBG` → **Redeploy**.
+
+No hay que tocar el frontend: el branding del SBG (morado/rosa, mascota `assets/emblem-sbg.webp`, textos y responsables) ya vive en `index.html`, en `BOARDS.sbg`. Para agregar o quitar personas del SBG, edita la pestaña **Equipo** de su hoja.
 
 ## Cambios en el script
 

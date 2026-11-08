@@ -8,6 +8,22 @@ import crypto from "node:crypto";
 
 const ACTIONS = new Set(["save", "move", "delete"]);
 
+// Un solo endpoint sirve a los dos tableros. ?board=scd|sbg elige qué hoja usar.
+// Cada tablero tiene su propio set de variables en Vercel; el SBG lleva sufijo _SBG.
+function pickBoard(req) {
+  let b = (req.query && req.query.board) || "";
+  if (b !== "scd" && b !== "sbg") {
+    try { b = new URL(req.url, "http://x").searchParams.get("board") || ""; } catch { b = ""; }
+  }
+  return b === "sbg" ? "sbg" : "scd";
+}
+
+function envFor(board) {
+  return board === "sbg"
+    ? { APPS_SCRIPT_URL: process.env.APPS_SCRIPT_URL_SBG, API_SECRET: process.env.API_SECRET_SBG, TEAM_CODE: process.env.TEAM_CODE_SBG, vars: "APPS_SCRIPT_URL_SBG o API_SECRET_SBG" }
+    : { APPS_SCRIPT_URL: process.env.APPS_SCRIPT_URL, API_SECRET: process.env.API_SECRET, TEAM_CODE: process.env.TEAM_CODE, vars: "APPS_SCRIPT_URL o API_SECRET" };
+}
+
 function sameText(a, b) {
   const ha = crypto.createHash("sha256").update(String(a)).digest();
   const hb = crypto.createHash("sha256").update(String(b)).digest();
@@ -22,10 +38,11 @@ function readBody(req) {
 
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
-  const { APPS_SCRIPT_URL, API_SECRET, TEAM_CODE } = process.env;
+  const board = pickBoard(req);
+  const { APPS_SCRIPT_URL, API_SECRET, TEAM_CODE, vars } = envFor(board);
 
   if (!APPS_SCRIPT_URL || !API_SECRET) {
-    return res.status(500).json({ ok: false, error: "Falta configurar APPS_SCRIPT_URL o API_SECRET en Vercel." });
+    return res.status(500).json({ ok: false, error: `Falta configurar ${vars} en Vercel.` });
   }
   if (TEAM_CODE && !sameText(req.headers["x-team-code"] || "", TEAM_CODE)) {
     return res.status(401).json({ ok: false, error: "Código del equipo incorrecto." });

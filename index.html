@@ -45,6 +45,49 @@
   color-scheme: dark;
 }
 
+/* ---------- tema del tablero SBG IPN (se activa con data-board="sbg") ---------- */
+:root[data-board="sbg"] {
+  --color-primary: #6D28D9;
+  --color-secondary: #8B3FF0;
+  --color-tertiary: #A855F7;
+  --color-accent: #C45CFF;
+  --color-conversion: #FF56EE;
+  --color-cyan: #38BDF8;
+  --color-link: #8AB4FF;
+  --color-error: #FB5B7D;
+  --color-warn: #F0A832;
+  --bg-base: #0A0C15;
+  --bg-surface: #161327;
+  --bg-surface-2: #241A44;
+  --bg-lane: #11101F;
+  --text-primary: #ECEAF6;
+  --text-secondary: #AFABC6;
+  --text-muted: #706C86;
+  --border-default: #2A2452;
+  --st-todo: #A98BE6;
+  --st-doing: #C45CFF;
+  --st-done: #38BDF8;
+  --glow-primary: 0 0 20px rgba(139,63,240,.28);
+  --glow-accent: 0 0 0 3px rgba(196,92,255,.22);
+  --glow-conversion: 0 0 20px rgba(255,86,238,.20);
+}
+:root[data-board="sbg"] header.top {
+  background: linear-gradient(120deg, rgba(109,40,217,.5), rgba(22,19,39,.85) 55%, rgba(10,12,21,.6));
+}
+:root[data-board="sbg"] .emblem { filter: drop-shadow(0 0 18px rgba(196,92,255,.4)); }
+:root[data-board="sbg"] .countdown b { text-shadow: 0 0 22px rgba(196,92,255,.5); }
+:root[data-board="sbg"] .btn.ghost-accent:hover { background: rgba(196,92,255,.12); }
+/* La mascota del SBG se ve completa (no recortada): se dimensiona por su alto. */
+:root[data-board="sbg"] .emblem { width: auto; height: 156px; }
+@media (max-width: 640px) { :root[data-board="sbg"] .emblem { height: 120px; } }
+
+/* ---------- switch entre tableros (SCD / SBG) ---------- */
+.board-switch { display: inline-flex; gap: 4px; padding: 4px; background: var(--bg-surface); border: 1px solid var(--border-default); border-radius: 999px; flex: 0 0 auto; }
+.board-switch button { border: 0; background: transparent; color: var(--text-muted); cursor: pointer; padding: 7px 15px; border-radius: 999px; font: 600 12px/1 var(--font-body); letter-spacing: .05em; text-transform: uppercase; transition: var(--transition-base); white-space: nowrap; }
+.board-switch button:hover { color: var(--text-primary); }
+.board-switch button[aria-pressed="true"] { background: var(--color-accent); color: var(--bg-base); box-shadow: var(--glow-accent); }
+@media (max-width: 560px) { .board-switch { width: 100%; } .board-switch button { flex: 1; } }
+
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 img { max-width: 100%; }
@@ -410,11 +453,11 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
 
 <div class="wrap" id="app">
   <header class="top">
-    <img class="emblem" src="assets/emblem.webp" width="112" height="131" alt="Emblema del AWS Student Community Day CDMX 2026">
+    <img class="emblem" id="emblem" src="assets/emblem.webp" width="112" height="131" alt="Emblema del AWS Student Community Day CDMX 2026">
     <div>
-      <p class="eyebrow">AWS Student Community Day · Área Creativity</p>
-      <h1>Tablero de diseño</h1>
-      <p class="sub">CDMX 2026</p>
+      <p class="eyebrow" id="eyebrow">AWS Student Community Day · Área Creativity</p>
+      <h1 id="h1title">Tablero de diseño</h1>
+      <p class="sub" id="sub">CDMX 2026</p>
     </div>
     <div class="countdown" id="countdown"></div>
     <div class="progress">
@@ -428,6 +471,10 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
   </div>
 
   <div class="toolbar">
+    <div class="board-switch" id="boardSwitch" role="group" aria-label="Cambiar de tablero">
+      <button type="button" data-board="scd" aria-pressed="true">SCD CDMX</button>
+      <button type="button" data-board="sbg" aria-pressed="false">SBG IPN</button>
+    </div>
     <div class="chips" id="chips" role="group" aria-label="Filtrar por persona"></div>
     <div class="tools">
       <button class="btn ghost-accent" id="btnNew" type="button">+ Nueva tarea</button>
@@ -535,18 +582,72 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
 <script>
 (function () {
   "use strict";
-  var EVENT_DATE = new Date(2026, 10, 4); // 4 de noviembre de 2026
+  // ---- Los dos tableros que viven en esta misma página. El switch alterna entre ellos. ----
+  // Cada uno tiene su propio branding, su propia hoja (vía /api/board?board=…) y sus datos de demo.
+  var BOARDS = {
+    scd: {
+      attr: "scd", idPrefix: "CR-",
+      title: "Tablero Creativity · SCD CDMX 2026",
+      eyebrow: "AWS Student Community Day · Área Creativity",
+      h1: "Tablero de diseño", sub: "CDMX 2026",
+      emblem: "assets/emblem.webp", emblemAlt: "Emblema del AWS Student Community Day CDMX 2026",
+      themeColor: "#0E0E1A",
+      brandFull: "AWS Student Community Day CDMX 2026", shortTag: "SCD CDMX",
+      eventDate: new Date(2026, 10, 4), eventLabel: "4 nov",
+      team: [
+        { nombre: "Irvin", color: "#C143BC" }, { nombre: "Rafa", color: "#613BB8" },
+        { nombre: "Xavi", color: "#3DD6D0" }, { nombre: "Diana", color: "#378ADD" },
+        { nombre: "Sin asignar", color: "#73726C" }
+      ],
+      tasks: [
+        ["CR-001","Call for volunteers","Diseño de la publicación para la convocatoria de voluntarios","Rafa","To Do","Urgente"],
+        ["CR-002","Badges del evento","Diseño de los badges que se entregarán","Sin asignar","To Do","Importante"],
+        ["CR-003","Arañas de cada zona","Diseño de las arañas de cada zona","Sin asignar","To Do","Importante"],
+        ["CR-004","Slides base para speakers","Plantilla base de slides para los speakers y sus sesiones","Sin asignar","To Do","Importante"],
+        ["CR-005","Constancias de participación","Diseño de constancias para speakers y voluntarios","Sin asignar","To Do","Normal"],
+        ["CR-006","Propuestas de swag","Playeras (voluntarios, organizadores y general), plumas y tote bags","Sin asignar","To Do","Urgente"]
+      ],
+      recursos: [
+        { etiqueta: "Identidad gráfica (Canva)", enlace: "https://www.canva.com/design/DAHWXNICiKQ/EsrE2XvZOCf_kJAGxyh3jg/edit", notas: "Logos, tipografías, iconografía y elementos gráficos del evento" }
+      ]
+    },
+    sbg: {
+      attr: "sbg", idPrefix: "CR-",
+      title: "Tablero Creativity · AWS SBG IPN",
+      eyebrow: "AWS Student Builder Group IPN · Área Creativity",
+      h1: "Tablero de diseño", sub: "SBG IPN",
+      emblem: "assets/emblem-sbg.webp", emblemAlt: "Mascota del AWS Student Builder Group IPN",
+      themeColor: "#0A0C15",
+      brandFull: "AWS Student Builder Group IPN", shortTag: "SBG IPN",
+      eventDate: null, eventLabel: "",
+      team: [
+        { nombre: "Irvin", color: "#C45CFF" },
+        { nombre: "Sin asignar", color: "#6E6B82" }
+      ],
+      tasks: [
+        ["CR-001","Portada de Instagram","Portada y branding del perfil @awsclub.ipn","Irvin","Doing","Urgente"],
+        ["CR-002","Post de bienvenida SBG","Diseño del post de bienvenida para nuevos miembros del grupo","Irvin","To Do","Importante"],
+        ["CR-003","Plantilla de flyer de sesión","Plantilla base para los flyers de sesiones y workshops del grupo","Sin asignar","To Do","Importante"],
+        ["CR-004","Kit de stickers del burrito","Set de stickers de la mascota para redes y eventos","Sin asignar","To Do","Normal"]
+      ],
+      recursos: [
+        { etiqueta: "Identidad gráfica SBG IPN", enlace: "", notas: "Logos, mascota del burrito, paleta morado/rosa y elementos pixel-art" }
+      ]
+    }
+  };
+
   var ESTADOS = ["To Do", "Doing", "Done"];
   var PRIO_ORDER = { Urgente: 0, Importante: 1, Normal: 2 };
   var REFRESH_MS = 30000;
   var MODE = "live"; // "live" | "demo"
   var teamCode = "";
+  function cfg() { return BOARDS[state.board] || BOARDS.scd; }
 
   function apiFetch(method, body) {
-    return fetch("/api/board", {
+    return fetch("/api/board?board=" + encodeURIComponent(state.board), {
       method: method,
       headers: { "Content-Type": "application/json", "x-team-code": teamCode },
-      body: body ? JSON.stringify(body) : undefined,
+      body: body ? JSON.stringify(Object.assign({ board: state.board }, body)) : undefined,
       cache: "no-store"
     }).then(function (r) {
       return r.json().catch(function () { return null; }).then(function (data) {
@@ -560,46 +661,44 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
   }
 
   var demo = (function () {
-    var team = [
-      { nombre: "Irvin", color: "#C143BC" }, { nombre: "Rafa", color: "#613BB8" },
-      { nombre: "Xavi", color: "#3DD6D0" }, { nombre: "Diana", color: "#378ADD" },
-      { nombre: "Sin asignar", color: "#73726C" }
-    ];
     var s = "2026-10-15 20:10";
-    var tasks = [
-      ["CR-001","Call for volunteers","Diseño de la publicación para la convocatoria de voluntarios","Rafa","To Do","Urgente"],
-      ["CR-002","Badges del evento","Diseño de los badges que se entregarán","Sin asignar","To Do","Importante"],
-      ["CR-003","Arañas de cada zona","Diseño de las arañas de cada zona","Sin asignar","To Do","Importante"],
-      ["CR-004","Slides base para speakers","Plantilla base de slides para los speakers y sus sesiones","Sin asignar","To Do","Importante"],
-      ["CR-005","Constancias de participación","Diseño de constancias para speakers y voluntarios","Sin asignar","To Do","Normal"],
-      ["CR-006","Propuestas de swag","Playeras (voluntarios, organizadores y general), plumas y tote bags","Sin asignar","To Do","Urgente"]
-    ].map(function (r) {
-      return { id: r[0], titulo: r[1], descripcion: r[2], responsable: r[3], estado: r[4], prioridad: r[5],
-               fecha: "", notas: "", enlace: "", plantilla: "", materiales: "", creado: s, actualizado: s, actualizadoPor: "Irvin" };
-    });
-    var recursos = [
-      { etiqueta: "Identidad gráfica (Canva)", enlace: "https://www.canva.com/design/DAHWXNICiKQ/EsrE2XvZOCf_kJAGxyh3jg/edit", notas: "Logos, tipografías, iconografía y elementos gráficos del evento" }
-    ];
+    var stores = {};
+    // Cada tablero tiene su propio juego de datos de demo, clonado de BOARDS[bid].
+    function demoFor(bid) {
+      if (!stores[bid]) {
+        var b = BOARDS[bid];
+        stores[bid] = {
+          team: b.team.map(function (x) { return { nombre: x.nombre, color: x.color }; }),
+          recursos: b.recursos.map(function (x) { return { etiqueta: x.etiqueta, enlace: x.enlace, notas: x.notas }; }),
+          tasks: b.tasks.map(function (r) {
+            return { id: r[0], titulo: r[1], descripcion: r[2], responsable: r[3], estado: r[4], prioridad: r[5],
+                     fecha: "", notas: "", enlace: "", plantilla: "", materiales: "", creado: s, actualizado: s, actualizadoPor: "Irvin" };
+          })
+        };
+      }
+      return stores[bid];
+    }
     function stamp() { var d = new Date(); return d.toISOString().slice(0, 10) + " " + d.toTimeString().slice(0, 5); }
-    function board() { return { ok: true, tasks: JSON.parse(JSON.stringify(tasks)), team: team.slice(), recursos: recursos.slice(), serverTime: stamp() }; }
+    function board() { var st = demoFor(state.board); return { ok: true, tasks: JSON.parse(JSON.stringify(st.tasks)), team: st.team.slice(), recursos: st.recursos.slice(), serverTime: stamp() }; }
     function wait(v) { return new Promise(function (r) { setTimeout(function () { r(v); }, 250); }); }
     return {
       getBoard: function () { return wait(board()); },
       saveTask: function (t, user) {
         if (!String(t.titulo || "").trim()) return Promise.reject(new Error("La tarea necesita un título."));
-        var found = tasks.filter(function (x) { return x.id === t.id; })[0];
+        var st = demoFor(state.board);
+        var found = st.tasks.filter(function (x) { return x.id === t.id; })[0];
         if (found) { Object.assign(found, t, { actualizado: stamp(), actualizadoPor: user }); }
         else {
-          var max = tasks.reduce(function (m, x) { return Math.max(m, parseInt(x.id.slice(3), 10) || 0); }, 0);
-          tasks.push(Object.assign({}, t, { id: "CR-" + String(max + 1).padStart(3, "0"), creado: stamp(), actualizado: stamp(), actualizadoPor: user }));
+          var max = st.tasks.reduce(function (m, x) { return Math.max(m, parseInt(x.id.slice(3), 10) || 0); }, 0);
+          st.tasks.push(Object.assign({}, t, { id: cfg().idPrefix + String(max + 1).padStart(3, "0"), creado: stamp(), actualizado: stamp(), actualizadoPor: user }));
         }
         return wait(board());
       },
       moveTask: function (id, estado, user) {
-        tasks.forEach(function (x) { if (x.id === id) { x.estado = estado; x.actualizado = stamp(); x.actualizadoPor = user; } });
+        demoFor(state.board).tasks.forEach(function (x) { if (x.id === id) { x.estado = estado; x.actualizado = stamp(); x.actualizadoPor = user; } });
         return wait(board());
       },
-      deleteTask: function (id) { tasks = tasks.filter(function (x) { return x.id !== id; }); return wait(board()); }
+      deleteTask: function (id) { var st = demoFor(state.board); st.tasks = st.tasks.filter(function (x) { return x.id !== id; }); return wait(board()); }
     };
   })();
 
@@ -611,12 +710,13 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
   };
 
   /* ------------ estado ------------ */
-  var state = { tasks: [], team: [], recursos: [], avisos: [], person: "Todos", prio: "Todas", q: "", me: "", busy: 0, dragging: false };
+  var state = { board: "scd", tasks: [], team: [], recursos: [], avisos: [], person: "Todos", prio: "Todas", q: "", me: "", busy: 0, dragging: false };
   var $ = function (id) { return document.getElementById(id); };
 
   function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
-  state.me = store("creativity.me") || "";
-  teamCode = store("creativity.team") || "";
+  state.board = (store("creativity.board") === "sbg") ? "sbg" : "scd";
+  state.me = store("creativity.me." + state.board) || "";
+  teamCode = store("creativity.team." + state.board) || "";
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -688,7 +788,7 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
   function showApp() { $("gate").hidden = true; $("app").hidden = false; }
   $("gate").addEventListener("submit", function (ev) {
     ev.preventDefault();
-    teamCode = $("gateCode").value.trim(); store("creativity.team", teamCode);
+    teamCode = $("gateCode").value.trim(); store("creativity.team." + state.board, teamCode);
     $("gateErr").textContent = "Verificando…"; load();
   });
 
@@ -709,10 +809,15 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
   }
 
   function renderHeader() {
-    var days = Math.round((EVENT_DATE - today0()) / 86400000);
-    $("countdown").innerHTML = days > 0
-      ? "<b>" + days + "</b><span>" + (days === 1 ? "día" : "días") + " para el evento · 4 nov</span>"
-      : days === 0 ? "<b>Hoy</b><span>es el evento</span>" : "<b>✓</b><span>Evento realizado</span>";
+    var ev = cfg().eventDate;
+    if (ev) {
+      var days = Math.round((ev - today0()) / 86400000);
+      $("countdown").innerHTML = days > 0
+        ? "<b>" + days + "</b><span>" + (days === 1 ? "día" : "días") + " para el evento · " + cfg().eventLabel + "</span>"
+        : days === 0 ? "<b>Hoy</b><span>es el evento</span>" : "<b>✓</b><span>Evento realizado</span>";
+    } else {
+      $("countdown").innerHTML = "";
+    }
 
     var total = state.tasks.length || 1, c = { "To Do": 0, Doing: 0, Done: 0 };
     state.tasks.forEach(function (t) { c[t.estado] = (c[t.estado] || 0) + 1; });
@@ -940,7 +1045,7 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
   }
   function waMessage(t, who) {
     var lines = [];
-    lines.push("Hola " + (who || t.responsable) + ", te asignaron una tarea en Creativity · AWS Student Community Day CDMX 2026.");
+    lines.push("Hola " + (who || t.responsable) + ", te asignaron una tarea en Creativity · " + cfg().brandFull + ".");
     lines.push("");
     lines.push("*" + t.titulo + "*" + (t.id ? " (" + t.id + ")" : ""));
     lines.push("Prioridad: " + (t.prioridad || "Normal"));
@@ -970,7 +1075,7 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
     if (!d) return null;
     var end = new Date(d); end.setDate(end.getDate() + 1);
     var details = [t.descripcion, t.notas ? "Notas: " + t.notas : "", "Tablero: " + taskUrl(t.id)].filter(Boolean).join("\n\n");
-    return { start: ymdCompact(d), end: ymdCompact(end), title: "Entrega: " + t.titulo + " · SCD CDMX", details: details };
+    return { start: ymdCompact(d), end: ymdCompact(end), title: "Entrega: " + t.titulo + " · " + cfg().shortTag, details: details };
   }
   function gcalLink(t) {
     var c = calInfo(t);
@@ -1223,18 +1328,51 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
   $("btnNew").addEventListener("click", function () { openForm(null); });
   $("btnRefresh").addEventListener("click", load);
 
-  /* ------------ fondo: cometas del design system (opacidad máx 0.22) ------------ */
+  /* ------------ switch entre tableros (SCD CDMX / SBG IPN) ------------ */
+  function applyBoard(bid, opts) {
+    state.board = (bid === "sbg") ? "sbg" : "scd";
+    store("creativity.board", state.board);
+    var b = cfg();
+    document.documentElement.setAttribute("data-board", b.attr);
+    var em = $("emblem"); if (em) { em.src = b.emblem; em.alt = b.emblemAlt; }
+    $("eyebrow").textContent = b.eyebrow;
+    $("h1title").textContent = b.h1;
+    $("sub").textContent = b.sub;
+    document.title = b.title;
+    var mt = document.querySelector('meta[name="theme-color"]'); if (mt) mt.setAttribute("content", b.themeColor);
+    var sw = $("boardSwitch");
+    if (sw) Array.prototype.forEach.call(sw.querySelectorAll("button"), function (btn) {
+      btn.setAttribute("aria-pressed", btn.getAttribute("data-board") === state.board ? "true" : "false");
+    });
+    // Cada tablero tiene su propia hoja: equipo, código del equipo e identidad son distintos.
+    state.me = store("creativity.me." + state.board) || "";
+    teamCode = store("creativity.team." + state.board) || "";
+    state.person = "Todos"; state.prio = "Todas"; state.q = "";
+    if (!opts || !opts.initial) { loadedOnce = false; load(); }
+  }
+  $("boardSwitch").addEventListener("click", function (ev) {
+    var btn = ev.target.closest && ev.target.closest("button[data-board]");
+    if (!btn || btn.getAttribute("data-board") === state.board) return;
+    applyBoard(btn.getAttribute("data-board"));
+  });
+
+  /* ------------ fondo: cometas (SCD) o cuadros pixel morado/rosa (SBG) · opacidad máx 0.22 ------------ */
   (function sky() {
     var cv = $("sky"), ctx = cv.getContext && cv.getContext("2d");
     if (!ctx || (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches)) return;
-    var COLORS = [[66,43,120],[97,59,184],[123,63,166],[193,67,188],[216,90,48]];
+    // Paleta por tablero: SCD (morado/cian/naranja) · SBG IPN (morado/rosa, como el PDF de la comunidad).
+    var PAL = {
+      scd: [[66,43,120],[97,59,184],[123,63,166],[193,67,188],[216,90,48]],
+      sbg: [[109,40,217],[139,63,240],[168,85,247],[196,92,255],[255,86,238]]
+    };
     var N = 55, MAXO = 0.22, TAIL = 28, SMIN = 2.8, SMAX = 7.5, FADE = 0.62, W = 0, H = 0, dpr = 1, parts = [];
     function size() { dpr = Math.min(window.devicePixelRatio || 1, 2); W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
     function spawn(p, fresh) {
       var a = Math.PI * (0.15 + Math.random() * 0.2), sp = SMIN + Math.random() * (SMAX - SMIN);
       p.x = Math.random() * W * 1.2 - W * 0.2; p.y = fresh ? Math.random() * H : -20 - Math.random() * H * 0.3;
-      p.vx = Math.cos(a) * sp; p.vy = Math.sin(a) * sp; p.c = COLORS[(Math.random() * COLORS.length) | 0];
+      p.vx = Math.cos(a) * sp; p.vy = Math.sin(a) * sp; p.ci = (Math.random() * 5) | 0;
       p.life = 0; p.max = 90 + Math.random() * 160; p.fly = Math.random() < 0.35; p.r = p.fly ? 1.5 + Math.random() * 1.5 : 1.2;
+      p.sq = 8 + ((Math.random() * 20) | 0); // lado del cuadro (SBG), tamaños variados como en el PDF
       if (p.fly) { p.vx *= 0.08; p.vy *= 0.08; }
       return p;
     }
@@ -1242,18 +1380,25 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
     for (var i = 0; i < N; i++) parts.push(spawn({}, true));
     function frame() {
       if (document.visibilityState === "visible") {
+        var sbg = state.board === "sbg";
+        var pal = sbg ? PAL.sbg : PAL.scd;
+        var spd = sbg ? 0.28 : 1; // los cuadros del SBG flotan lento; los cometas del SCD van rápido
         ctx.clearRect(0, 0, W, H);
         parts.forEach(function (p) {
-          p.life++; p.x += p.vx; p.y += p.vy;
+          p.life++; p.x += p.vx * spd; p.y += p.vy * spd;
           var t = p.life / p.max, o = MAXO * (t < 0.1 ? t / 0.1 : t > FADE ? Math.max(0, 1 - (t - FADE) / (1 - FADE)) : 1);
-          var col = "rgba(" + p.c[0] + "," + p.c[1] + "," + p.c[2] + ",";
-          if (!p.fly) {
-            var g = ctx.createLinearGradient(p.x, p.y, p.x - p.vx / SMAX * TAIL * 3, p.y - p.vy / SMAX * TAIL * 3);
-            g.addColorStop(0, col + o + ")"); g.addColorStop(1, col + "0)");
-            ctx.strokeStyle = g; ctx.lineWidth = p.r; ctx.beginPath(); ctx.moveTo(p.x, p.y);
-            ctx.lineTo(p.x - p.vx / SMAX * TAIL * 3, p.y - p.vy / SMAX * TAIL * 3); ctx.stroke();
+          var c = pal[p.ci], col = "rgba(" + c[0] + "," + c[1] + "," + c[2] + ",";
+          if (sbg) {
+            ctx.fillStyle = col + o + ")"; ctx.fillRect(p.x, p.y, p.sq, p.sq);
+          } else {
+            if (!p.fly) {
+              var g = ctx.createLinearGradient(p.x, p.y, p.x - p.vx / SMAX * TAIL * 3, p.y - p.vy / SMAX * TAIL * 3);
+              g.addColorStop(0, col + o + ")"); g.addColorStop(1, col + "0)");
+              ctx.strokeStyle = g; ctx.lineWidth = p.r; ctx.beginPath(); ctx.moveTo(p.x, p.y);
+              ctx.lineTo(p.x - p.vx / SMAX * TAIL * 3, p.y - p.vy / SMAX * TAIL * 3); ctx.stroke();
+            }
+            ctx.fillStyle = col + o + ")"; ctx.fillRect(p.x - p.r, p.y - p.r, p.r * 2, p.r * 2);
           }
-          ctx.fillStyle = col + o + ")"; ctx.fillRect(p.x - p.r, p.y - p.r, p.r * 2, p.r * 2);
           if (p.life >= p.max || p.x > W + 60 || p.y > H + 60) spawn(p, false);
         });
       }
@@ -1263,6 +1408,7 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
   })();
 
   /* ------------ arranque + auto-actualización ------------ */
+  applyBoard(state.board, { initial: true });
   load();
   setInterval(function () {
     if (MODE !== "live" || !loadedOnce || !$("gate").hidden) return;
