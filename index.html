@@ -80,6 +80,14 @@
 /* La mascota del SBG se ve completa (no recortada): se dimensiona por su alto. */
 :root[data-board="sbg"] .emblem { width: auto; height: 156px; }
 @media (max-width: 640px) { :root[data-board="sbg"] .emblem { height: 120px; } }
+/* Logos arriba a la derecha: AWS en ambos tableros, el chip del SBG solo en el SBG. */
+.headright { display: grid; gap: 14px; justify-items: end; align-content: start; align-self: start; }
+.brandmarks { display: flex; align-items: center; gap: 16px; }
+.brandmarks .bm { display: block; width: auto; }
+.brandmarks .bm-aws { height: 26px; opacity: .95; }
+.brandmarks .bm-sbg { height: 32px; display: none; filter: drop-shadow(0 0 10px rgba(196,92,255,.5)); }
+:root[data-board="sbg"] .brandmarks .bm-sbg { display: block; }
+@media (max-width: 760px) { .headright { justify-items: start; align-self: auto; } }
 
 /* ---------- switch entre tableros (SCD / SBG) ---------- */
 .board-switch { display: inline-flex; gap: 4px; padding: 4px; background: var(--bg-surface); border: 1px solid var(--border-default); border-radius: 999px; flex: 0 0 auto; }
@@ -459,7 +467,13 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
       <h1 id="h1title">Tablero de diseño</h1>
       <p class="sub" id="sub">CDMX 2026</p>
     </div>
-    <div class="countdown" id="countdown"></div>
+    <div class="headright">
+      <div class="brandmarks" aria-label="Marcas">
+        <img class="bm bm-aws" src="assets/aws-logo.webp" width="120" height="72" alt="AWS">
+        <img class="bm bm-sbg" src="assets/sbg-chip.webp" width="96" height="96" alt="AWS Student Builder Group IPN">
+      </div>
+      <div class="countdown" id="countdown"></div>
+    </div>
     <div class="progress">
       <div class="bar" id="bar" role="img" aria-label="Progreso"></div>
       <div class="legend" id="legend"></div>
