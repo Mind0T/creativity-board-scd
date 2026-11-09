@@ -486,8 +486,8 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
 
   <div class="toolbar">
     <div class="board-switch" id="boardSwitch" role="group" aria-label="Cambiar de tablero">
-      <button type="button" data-board="scd" aria-pressed="true">SCD CDMX</button>
-      <button type="button" data-board="sbg" aria-pressed="false">SBG IPN</button>
+      <button type="button" data-board="scd" aria-pressed="false">SCD CDMX</button>
+      <button type="button" data-board="sbg" aria-pressed="true">SBG IPN</button>
     </div>
     <div class="chips" id="chips" role="group" aria-label="Filtrar por persona"></div>
     <div class="tools">
@@ -724,11 +724,12 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
   };
 
   /* ------------ estado ------------ */
-  var state = { board: "scd", tasks: [], team: [], recursos: [], avisos: [], person: "Todos", prio: "Todas", q: "", me: "", busy: 0, dragging: false };
+  var state = { board: "sbg", tasks: [], team: [], recursos: [], avisos: [], person: "Todos", prio: "Todas", q: "", me: "", busy: 0, dragging: false };
   var $ = function (id) { return document.getElementById(id); };
 
   function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
-  state.board = (store("creativity.board") === "sbg") ? "sbg" : "scd";
+  // Por defecto abre el tablero del SBG; si el usuario eligió el SCD antes, se respeta esa elección.
+  state.board = (store("creativity.board") === "scd") ? "scd" : "sbg";
   state.me = store("creativity.me." + state.board) || "";
   teamCode = store("creativity.team." + state.board) || "";
 
