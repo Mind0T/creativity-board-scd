@@ -1200,12 +1200,15 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
     api.notifyDone(id).catch(function () { return null; }).then(function (res) {
       if (res && res.sent) { showNotice("«" + t.titulo + "» quedó terminada. Ya se avisó por WhatsApp automáticamente."); return; }
       // Si el aviso automático no salió, dilo (así se ve qué falta) y deja el botón manual como respaldo.
-      if (!res) toast("El aviso automático no respondió (¿el tablero está actualizado? Recarga con Ctrl+F5). Uso el botón manual.");
-      else if (res.reason === "not_configured") { if (state.board === "sbg") toast("El servidor no ve FORMSPREE_URL_SBG: revisa que esté en Production y haz Redeploy del último despliegue. Uso el botón manual."); }
-      else if (res.reason) toast("Aviso automático no enviado: " + res.reason);
+      // El motivo va dentro del mismo aviso (no en un toast aparte) para que se lea completo junto al botón manual.
+      var why = "";
+      if (!res) why = "El aviso automático no respondió (¿el tablero está actualizado? Recarga con Ctrl+F5).";
+      else if (res.reason === "not_configured") { if (state.board === "sbg") why = "El servidor no ve FORMSPREE_URL_SBG: revisa que esté en Production y haz Redeploy del último despliegue."; }
+      else if (res.reason) why = "Aviso automático no enviado: " + res.reason;
       var links = doneLinks(t);
-      if (links.length) showNotice("«" + t.titulo + "» quedó terminada.", links);
-      else showNotice("«" + t.titulo + "» quedó terminada. Agrega el WhatsApp de quien debe recibir el aviso en la pestaña Avisos para poder avisarle desde aquí.");
+      var head = "«" + t.titulo + "» quedó terminada." + (why ? " " + why : "");
+      if (links.length) showNotice(head, links);
+      else showNotice(head + " Agrega el WhatsApp de quien debe recibir el aviso en la pestaña Avisos para poder avisarle desde aquí.");
     });
   }
   function addMatRow(label, url, focus) {
