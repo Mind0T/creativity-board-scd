@@ -191,7 +191,8 @@ h1 { margin: 0; font: 700 clamp(30px, 4.6vw, 52px)/1 var(--font-display); color:
 /* ---------- carriles ---------- */
 .board { display: grid; gap: 20px; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
 .lane {
-  background: rgba(21,18,42,.82); backdrop-filter: blur(8px); border: 1px solid var(--border-default);
+  /* Semitransparente + desenfoque: el fondo animado de cuadros se ve suave detrás de las columnas. */
+  background: rgba(21,18,42,.52); backdrop-filter: blur(9px); -webkit-backdrop-filter: blur(9px); border: 1px solid var(--border-default);
   border-radius: var(--radius-lg); padding: 14px; display: grid; gap: 12px; min-height: 200px; align-content: start;
   transition: var(--transition-base);
 }
@@ -1403,7 +1404,7 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
       scd: [[66,43,120],[97,59,184],[123,63,166],[193,67,188],[216,90,48]],
       sbg: [[109,40,217],[139,63,240],[168,85,247],[196,92,255],[255,86,238]]
     };
-    var N = 55, MAXO = 0.22, TAIL = 28, SMIN = 2.8, SMAX = 7.5, FADE = 0.62, W = 0, H = 0, dpr = 1, parts = [];
+    var N = 72, MAXO = 0.30, TAIL = 28, SMIN = 2.8, SMAX = 7.5, FADE = 0.62, W = 0, H = 0, dpr = 1, parts = [];
     function size() { dpr = Math.min(window.devicePixelRatio || 1, 2); W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
     function spawn(p, fresh) {
       var a = Math.PI * (0.15 + Math.random() * 0.2), sp = SMIN + Math.random() * (SMAX - SMIN);
