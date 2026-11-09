@@ -776,7 +776,9 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
         MODE = "demo"; $("demoNote").hidden = false; return load();
       }
       showApp();
-      setSync("error", "Sin conexión con la hoja"); toast("No pude leer la hoja: " + err.message);
+      var cfgErr = /Falta configurar/i.test(err.message || "");
+      setSync("error", cfgErr ? "Este tablero aún no está conectado a su hoja" : "Sin conexión con la hoja");
+      toast((cfgErr ? "Conéctalo en Vercel (variables del board) y haz Redeploy. " : "No pude leer la hoja: ") + err.message);
     });
   }
 
@@ -1348,7 +1350,11 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
     state.me = store("creativity.me." + state.board) || "";
     teamCode = store("creativity.team." + state.board) || "";
     state.person = "Todos"; state.prio = "Todas"; state.q = "";
-    if (!opts || !opts.initial) { loadedOnce = false; load(); }
+    if (!opts || !opts.initial) {
+      // Limpia los datos del tablero anterior para no mostrarlos mientras carga el nuevo.
+      state.tasks = []; state.team = []; state.recursos = []; state.avisos = [];
+      loadedOnce = false; render(); load();
+    }
   }
   $("boardSwitch").addEventListener("click", function (ev) {
     var btn = ev.target.closest && ev.target.closest("button[data-board]");
