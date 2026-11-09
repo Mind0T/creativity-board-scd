@@ -629,7 +629,7 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
       attr: "sbg", idPrefix: "CR-",
       title: "Tablero Creativity · AWS SBG IPN",
       eyebrow: "AWS Student Builder Group IPN · Área Creativity",
-      h1: "Tablero de diseño", sub: "SBG IPN",
+      h1: "Creativity Team", sub: "SBG IPN",
       emblem: "assets/emblem-sbg.webp", emblemAlt: "Mascota del AWS Student Builder Group IPN",
       themeColor: "#0A0C15",
       brandFull: "AWS Student Builder Group IPN", shortTag: "SBG IPN",
@@ -1173,7 +1173,7 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
   }
   function doneMessage(t, target) {
     var lines = [];
-    lines.push("Hola " + firstName(target.nombre) + ", se terminó una tarea de Creativity · AWS Student Community Day CDMX 2026.");
+    lines.push("Hola " + firstName(target.nombre) + ", se terminó una tarea de Creativity · " + cfg().brandFull + ".");
     lines.push("");
     lines.push("*" + t.titulo + "*" + (t.id ? " (" + t.id + ")" : ""));
     lines.push("Hecha por: " + ([personOf(t.responsable), personOf(t.responsable2)].filter(Boolean).join(" y ") || "sin responsable asignado"));
@@ -1196,7 +1196,7 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
     if (!t) return;
     var links = doneLinks(t);
     if (links.length) showNotice("«" + t.titulo + "» quedó terminada.", links);
-    else showNotice("«" + t.titulo + "» quedó terminada. Agrega el WhatsApp de la capitana en la pestaña Avisos para poder avisarle desde aquí.");
+    else showNotice("«" + t.titulo + "» quedó terminada. Agrega el WhatsApp de quien debe recibir el aviso en la pestaña Avisos para poder avisarle desde aquí.");
   }
   function addMatRow(label, url, focus) {
     var row = document.createElement("div");
