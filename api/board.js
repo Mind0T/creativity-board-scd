@@ -52,8 +52,8 @@ async function notifyDone(req, res, body, env) {
     "Diseño o propuesta": task.enlace || "Todavía sin link de diseño en el tablero",
   };
   if (host) fields["Revísala en el tablero"] = `${proto}://${host}/#${task.id}`;
-  // La clave del tablero sale de la variable de entorno (nunca está en el repo) para que quien recibe el aviso pueda entrar.
-  if (env.TEAM_CODE) fields.key = env.TEAM_CODE;
+  // OJO: nunca mandes claves, contraseñas ni códigos de acceso a Formspree. Su sistema anti-abuso los detecta y
+  // bloquea la cuenta (le pasó a la primera cuenta cuando aquí se mandaba la clave del tablero en un campo "key").
 
   try {
     const ctl = new AbortController();
