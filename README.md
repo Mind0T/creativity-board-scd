@@ -63,6 +63,7 @@ git push -u origin main
 | `APPS_SCRIPT_URL_SBG` | La URL `/exec` de la hoja del **SBG** (ver abajo)  |
 | `API_SECRET_SBG`      | La clave `generarSecreto()` de la hoja del SBG     |
 | `TEAM_CODE_SBG`       | Un código para el equipo del SBG                   |
+| `FORMSPREE_URL_SBG`   | (Opcional) endpoint de Formspree para avisos por WhatsApp |
 
 4. **Deploy**. Comparte la URL `*.vercel.app` y el `TEAM_CODE` que corresponda con cada equipo.
 
@@ -80,6 +81,16 @@ El tablero del SBG corre con **el mismo código**, solo cambia su fuente de dato
 4. En Vercel pon esa URL, su clave y un código en `APPS_SCRIPT_URL_SBG`, `API_SECRET_SBG`, `TEAM_CODE_SBG` → **Redeploy**.
 
 No hay que tocar el frontend: el branding del SBG (morado/rosa, mascota `assets/emblem-sbg.webp`, textos y responsables) ya vive en `index.html`, en `BOARDS.sbg`. Para agregar o quitar personas del SBG, edita la pestaña **Equipo** de su hoja.
+
+## Aviso automático por WhatsApp al terminar una tarea (opcional)
+
+Además del botón manual «Avisar por WhatsApp», el tablero puede mandar el aviso **solo**, usando el plugin de WhatsApp de Formspree:
+
+1. En [formspree.io](https://formspree.io) crea un formulario (por ejemplo «Creativity SBG · tareas terminadas»).
+2. En su pestaña **Workflow** → **+ Add New** (Actions) → **WhatsApp** (en Notifications) → verifica el número de quien debe recibir los avisos. La verificación la hace el dueño de ese teléfono. El número vive en Formspree, nunca en este repo.
+3. Copia el endpoint del formulario (`https://formspree.io/f/xxxxxxxx`) y ponlo en Vercel como `FORMSPREE_URL_SBG` (o `FORMSPREE_URL` para el tablero del SCD) → **Redeploy**.
+
+Cuando una tarea pasa a **Done**, el servidor lee la tarea de la hoja, comprueba que de verdad esté en Done y manda a Formspree: tablero, tarea, quién la hizo, link del diseño y link al tablero. Si la variable no existe o Formspree falla, el tablero vuelve al botón manual de la pestaña **Avisos**.
 
 ## Cambios en el script
 

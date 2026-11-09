@@ -720,7 +720,9 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
     getBoard: function () { return MODE === "demo" ? demo.getBoard() : apiFetch("GET"); },
     saveTask: function (t, u) { return MODE === "demo" ? demo.saveTask(t, u) : apiFetch("POST", { action: "save", task: t, user: u }); },
     moveTask: function (id, e, u) { return MODE === "demo" ? demo.moveTask(id, e, u) : apiFetch("POST", { action: "move", id: id, estado: e, user: u }); },
-    deleteTask: function (id, u) { return MODE === "demo" ? demo.deleteTask(id, u) : apiFetch("POST", { action: "delete", id: id, user: u }); }
+    deleteTask: function (id, u) { return MODE === "demo" ? demo.deleteTask(id, u) : apiFetch("POST", { action: "delete", id: id, user: u }); },
+    // Pide al servidor el aviso automático por WhatsApp (Formspree). Si no está configurado responde { sent: false }.
+    notifyDone: function (id) { return MODE === "demo" ? Promise.resolve({ ok: true, sent: false }) : apiFetch("POST", { action: "notifydone", id: id }); }
   };
 
   /* ------------ estado ------------ */
@@ -1194,9 +1196,13 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
   function notifyDone(id, fallback) {
     var t = state.tasks.filter(function (x) { return x.id === id; })[0] || fallback;
     if (!t) return;
-    var links = doneLinks(t);
-    if (links.length) showNotice("«" + t.titulo + "» quedó terminada.", links);
-    else showNotice("«" + t.titulo + "» quedó terminada. Agrega el WhatsApp de quien debe recibir el aviso en la pestaña Avisos para poder avisarle desde aquí.");
+    // 1) Intenta el aviso automático (Formspree → WhatsApp). 2) Si no está configurado o falla, ofrece el botón manual.
+    api.notifyDone(id).catch(function () { return null; }).then(function (res) {
+      if (res && res.sent) { showNotice("«" + t.titulo + "» quedó terminada. Ya se avisó por WhatsApp automáticamente."); return; }
+      var links = doneLinks(t);
+      if (links.length) showNotice("«" + t.titulo + "» quedó terminada.", links);
+      else showNotice("«" + t.titulo + "» quedó terminada. Agrega el WhatsApp de quien debe recibir el aviso en la pestaña Avisos para poder avisarle desde aquí.");
+    });
   }
   function addMatRow(label, url, focus) {
     var row = document.createElement("div");
