@@ -1203,7 +1203,7 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
       // El motivo va dentro del mismo aviso (no en un toast aparte) para que se lea completo junto al botón manual.
       var why = "";
       if (!res) why = "El aviso automático no respondió (¿el tablero está actualizado? Recarga con Ctrl+F5).";
-      else if (res.reason === "not_configured") { if (state.board === "sbg") why = "El servidor no ve FORMSPREE_URL_SBG: revisa que esté en Production y haz Redeploy del último despliegue."; }
+      else if (res.reason === "not_configured") { /* sin aviso automático configurado: se usa el botón manual, sin ruido */ }
       else if (res.reason) why = "Aviso automático no enviado: " + res.reason;
       var links = doneLinks(t);
       var head = "«" + t.titulo + "» quedó terminada." + (why ? " " + why : "");
