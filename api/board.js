@@ -44,13 +44,16 @@ async function notifyDone(req, res, body, env) {
 
   const host = req.headers["x-forwarded-host"] || req.headers.host || "";
   const proto = req.headers["x-forwarded-proto"] || "https";
+  // Formspree rotula cada línea del WhatsApp con el nombre del campo, así que los nombres son el texto visible.
+  // WhatsApp admite 6 líneas: la fecha (la pone Formspree) + estos 5 campos, en este orden.
   const fields = {
-    tablero: env.label,
-    tarea: `${task.titulo} (${task.id})`,
-    hecha_por: [task.responsable, task.responsable2].filter(Boolean).join(" y ") || "sin responsable asignado",
+    "Tarea terminada": `${task.titulo} (${task.id})`,
+    "Hecha por": [task.responsable, task.responsable2].filter(Boolean).join(" y ") || "sin responsable asignado",
+    "Diseño o propuesta": task.enlace || "Todavía sin link de diseño en el tablero",
   };
-  if (task.enlace) fields.diseno = task.enlace;
-  if (host) fields.link_del_tablero = `${proto}://${host}/#${task.id}`;
+  if (host) fields["Revísala en el tablero"] = `${proto}://${host}/#${task.id}`;
+  // La clave del tablero sale de la variable de entorno (nunca está en el repo) para que quien recibe el aviso pueda entrar.
+  if (env.TEAM_CODE) fields.key = env.TEAM_CODE;
 
   try {
     const ctl = new AbortController();
