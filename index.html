@@ -6,7 +6,8 @@
 <meta name="theme-color" content="#0E0E1A">
 <meta name="robots" content="noindex">
 <title>Tablero Creativity · SCD CDMX 2026</title>
-<link rel="icon" type="image/png" href="assets/favicon.png">
+<link id="favicon" rel="icon" type="image/png" href="assets/favicon-sbg.png">
+<link rel="apple-touch-icon" href="assets/favicon-sbg-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&family=Share+Tech+Mono&display=swap">
@@ -605,6 +606,7 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
       eyebrow: "AWS Student Community Day · Área Creativity",
       h1: "Tablero de diseño", sub: "CDMX 2026",
       emblem: "assets/emblem.webp", emblemAlt: "Emblema del AWS Student Community Day CDMX 2026",
+      favicon: "assets/favicon.png",
       themeColor: "#0E0E1A",
       brandFull: "AWS Student Community Day CDMX 2026", shortTag: "SCD CDMX",
       eventDate: new Date(2026, 10, 4), eventLabel: "4 nov",
@@ -631,6 +633,7 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
       eyebrow: "AWS Student Builder Group IPN · Área Creativity",
       h1: "Creativity Team", sub: "SBG IPN",
       emblem: "assets/emblem-sbg.webp", emblemAlt: "Mascota del AWS Student Builder Group IPN",
+      favicon: "assets/favicon-sbg.png",
       themeColor: "#0A0C15",
       brandFull: "AWS Student Builder Group IPN", shortTag: "SBG IPN",
       eventDate: null, eventLabel: "",
@@ -1369,6 +1372,7 @@ details.mats > summary:focus-visible { outline: 2px solid var(--color-accent); o
     $("h1title").textContent = b.h1;
     $("sub").textContent = b.sub;
     document.title = b.title;
+    var fav = $("favicon"); if (fav && b.favicon) fav.href = b.favicon;
     var mt = document.querySelector('meta[name="theme-color"]'); if (mt) mt.setAttribute("content", b.themeColor);
     var sw = $("boardSwitch");
     if (sw) Array.prototype.forEach.call(sw.querySelectorAll("button"), function (btn) {
